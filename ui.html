@@ -3,11 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>TV alerts</title>
 <style>
-:root { --bg:#12151b; --card:#1b1f27; --line:#2b3140; --fg:#e8ecf3; --dim:#9aa4b5; --accent:#4c8dff; --ok:#3fb950; --warn:#d29922; --bad:#f85149; }
+:root {
+  --bg:#12151b; --surface:#1b1f27; --raised:#242b38; --border:#2b3140;
+  --text:#e8ecf3; --muted:#9aa4b5; --action:#4c8dff; --focus:#8fbaff;
+  --ok:#3fb950; --warn:#d29922; --bad:#f85149;
+  --radius:12px; --radius-control:9px;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Consolas,monospace;
+  /* aliases kept so the rest of the stylesheet does not need a rewrite */
+  --card:var(--surface); --line:var(--border); --fg:var(--text); --dim:var(--muted); --accent:var(--action);
+}
+@media (prefers-color-scheme:light) {
+  :root {
+    --bg:#f3f6fc; --surface:#fff; --raised:#eef2fa; --border:#d5ddeb;
+    --text:#0b1530; --muted:#4d5b78; --action:#123bb5; --focus:#0450ef;
+    --ok:#137a4b; --warn:#8a5a00; --bad:#b3261e;
+  }
+}
 * { box-sizing:border-box; }
-body { margin:0; padding:14px 16px 40px; background:var(--bg); color:var(--fg); font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+body { margin:0 auto; max-width:1040px; padding:20px 16px 40px; background:var(--bg); color:var(--text); font:14px/1.45 var(--font); }
+:focus-visible { outline:2px solid var(--focus); outline-offset:2px; }
+[hidden] { display:none !important; }
 .head { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
 .logo { width:34px; height:34px; border-radius:9px; background:var(--card); display:flex; align-items:center; justify-content:center; font-size:19px; }
 h1 { font-size:19px; margin:0; flex:1; font-weight:600; }
@@ -27,17 +46,17 @@ h2 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(-
 label.f { display:block; font-size:12px; color:var(--dim); margin:10px 0 4px; }
 label.chk { display:flex; align-items:center; gap:8px; padding:3px 0; cursor:pointer; }
 label.chk input { width:17px; height:17px; accent-color:var(--accent); }
-select, input[type=text], input[type=password] { width:100%; background:#11151c; color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:8px 9px; font-size:13px; }
+select, input[type=text], input[type=password] { width:100%; background:var(--raised); color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:8px 9px; font-size:13px; }
 input[type=range] { width:100%; accent-color:var(--accent); }
-.dur input[type=number] { flex:1; min-width:70px; background:#11151c; color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:6px 8px; }
+.dur input[type=number] { flex:1; min-width:70px; background:var(--raised); color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:6px 8px; }
 .dur { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; color:var(--dim); }
 .dur span { flex:0 0 45%; }
 .dur b { flex:0 0 34px; text-align:right; color:var(--fg); }
 .row { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
-button.p, button.g, button.x { border-radius:9px; padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid var(--line); background:#232a36; color:var(--fg); }
-button.p { background:#1d3a6b; border-color:#2d5aa8; }
-button.g { background:#1c2b22; border-color:#2c4634; }
-button.x { padding:5px 9px; font-size:12px; background:#2a1d1f; border-color:#4a2b2e; color:#ffb3b8; }
+button.p, button.g, button.x { border-radius:var(--radius-control); padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:var(--raised); color:var(--text); }
+button.p { background:var(--action); border-color:var(--action); color:#fff; }
+button.g { background:var(--raised); border-color:var(--ok); }
+button.x { padding:5px 9px; font-size:12px; background:var(--surface); border-color:var(--bad); color:var(--bad); }
 button:disabled { opacity:.55; cursor:default; }
 button.done { border-color:var(--ok); }
 button.fail { border-color:var(--bad); }
@@ -45,14 +64,14 @@ button.fail { border-color:var(--bad); }
 .msg.ok { color:var(--ok); }
 .msg.err { color:var(--bad); }
 .live { font-size:15px; font-weight:600; margin-bottom:4px; }
-.club { border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:10px; background:#171b23; }
+.club { border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:10px; background:var(--surface); }
 .club-head { display:flex; align-items:center; gap:8px; }
 .club-head b { flex:1; font-size:14px; }
 .tag { font-size:11px; color:var(--dim); border:1px solid var(--line); border-radius:10px; padding:1px 7px; }
 .comps { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:2px 10px; margin:8px 0 2px; }
-.pick { display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:9px; padding:7px 10px; margin-bottom:7px; background:#171b23; }
+.pick { display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:9px; padding:7px 10px; margin-bottom:7px; background:var(--surface); }
 .simgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; margin-top:10px; }
-.simbtn { display:flex; align-items:center; gap:12px; text-align:left; padding:10px; border:1px solid var(--line); border-radius:11px; background:#171b23; color:var(--fg); cursor:pointer; }
+.simbtn { display:flex; align-items:center; gap:12px; text-align:left; padding:10px; border:1px solid var(--line); border-radius:11px; background:var(--surface); color:var(--fg); cursor:pointer; }
 .simbtn img { width:40px; height:40px; flex:none; }
 .simbtn b { display:block; font-size:14px; }
 .simbtn small { display:block; color:var(--dim); font-size:11px; }
@@ -70,6 +89,7 @@ details.sec .grid { margin-top:8px; }
 .secnote { font-size:11px; color:var(--dim); font-weight:400; }
 .tabnav { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:14px; }
 #diag-watches div, #diag-log div { margin:2px 0; }
+pre { white-space:pre-wrap; word-break:break-word; margin:0; font:11px/1.5 var(--mono,monospace); }
 .hidden { display:none !important; }
 </style>
 </head>
@@ -78,24 +98,24 @@ details.sec .grid { margin-top:8px; }
   <div class="logo">&#9917;</div>
   <h1 data-t="title">TV alerts</h1>
   <span class="ver" id="ver"></span>
-  <span class="msg" id="save-state"></span>
+  <span class="msg" id="save-state" aria-live="polite"></span>
   <button type="button" class="g" id="test-all" data-t="testAll">Test all</button>
   <button type="button" class="p" id="save-all" data-t="saveAll">Save all</button>
-  <div class="lang"><button type="button" id="l-en">EN</button><button type="button" id="l-pt">PT</button></div>
+  <div class="lang" role="group" aria-label="Language"><button type="button" id="l-en" aria-label="English">EN</button><button type="button" id="l-pt" aria-label="Portugu&#234;s">PT</button></div>
 </div>
 
-<div class="tabs">
-  <button type="button" data-tab="setup" class="on" data-t="tabSetup">SETUP</button>
-  <button type="button" data-tab="weather" data-t="tabWeather">Weather</button>
-  <button type="button" data-tab="news" data-t="tabNews">News</button>
-  <button type="button" data-tab="civ" data-t="tabCiv">Prote\u00E7\u00E3o Civil</button>
-  <button type="button" data-tab="football" data-t="tabFootball">Football</button>
-  <button type="button" data-tab="others" data-t="tabOthers">Other sports</button>
-  <button type="button" data-tab="tech" data-t="tabTech">Technical</button>
+<div class="tabs" role="tablist" aria-label="Sections">
+  <button type="button" id="tabbtn-setup" role="tab" aria-selected="true" aria-controls="tab-setup" data-tab="setup" class="on" data-t="tabSetup">SETUP</button>
+  <button type="button" id="tabbtn-weather" role="tab" aria-selected="false" aria-controls="tab-weather" data-tab="weather" data-t="tabWeather">Weather</button>
+  <button type="button" id="tabbtn-news" role="tab" aria-selected="false" aria-controls="tab-news" data-tab="news" data-t="tabNews">News</button>
+  <button type="button" id="tabbtn-civ" role="tab" aria-selected="false" aria-controls="tab-civ" data-tab="civ" data-t="tabCiv">Prote\u00E7\u00E3o Civil</button>
+  <button type="button" id="tabbtn-football" role="tab" aria-selected="false" aria-controls="tab-football" data-tab="football" data-t="tabFootball">Football</button>
+  <button type="button" id="tabbtn-others" role="tab" aria-selected="false" aria-controls="tab-others" data-tab="others" data-t="tabOthers">Other sports</button>
+  <button type="button" id="tabbtn-tech" role="tab" aria-selected="false" aria-controls="tab-tech" data-tab="tech" data-t="tabTech">Technical</button>
 </div>
 
 <!-- ============ GENERAL ============ -->
-<div class="tab on" id="tab-setup">
+<div class="tab on" id="tab-setup" role="tabpanel" aria-labelledby="tabbtn-setup">
   <div class="stack">
     <div class="card wide">
       <details class="sec" open>
@@ -110,9 +130,9 @@ details.sec .grid { margin-top:8px; }
       <details class="sec" open>
         <summary data-t="now">Right now</summary>
         <div class="live" id="sport-line">-</div>
-        <div class="msg" id="sport-stat"></div>
-        <div class="msg" id="next-line"></div>
-        <div class="msg" id="news-line"></div>
+        <div class="msg" id="sport-stat" aria-live="polite"></div>
+        <div class="msg" id="next-line" aria-live="polite"></div>
+        <div class="msg" id="news-line" aria-live="polite"></div>
         <div class="row"><button type="button" class="g" id="check" data-t="check">Check now</button></div>
       </details>
     </div>
@@ -124,7 +144,7 @@ details.sec .grid { margin-top:8px; }
 </div>
 
 <!-- ============ WEATHER ============ -->
-<div class="tab" id="tab-weather">
+<div class="tab" id="tab-weather" role="tabpanel" aria-labelledby="tabbtn-weather" hidden>
   <div class="stack">
     <div class="card wide"><div class="live" id="weather-line"></div></div>
     <div class="card wide">
@@ -158,7 +178,7 @@ details.sec .grid { margin-top:8px; }
         </div>
         <select id="place-results" class="hidden" style="margin-top:6px"></select>
         <div class="row" style="margin-top:6px"><button type="button" class="g" id="place-add" data-t="addPlace">Add selected</button></div>
-        <div class="msg" id="weather-msg"></div>
+        <div class="msg" id="weather-msg" aria-live="polite"></div>
         <div id="custom-places" class="small"></div>
       </details>
       <details class="sec">
@@ -187,7 +207,7 @@ details.sec .grid { margin-top:8px; }
 </div>
 
 <!-- ============ NEWS ============ -->
-<div class="tab" id="tab-news">
+<div class="tab" id="tab-news" role="tabpanel" aria-labelledby="tabbtn-news" hidden>
   <div class="stack">
     <div class="card wide">
       <details class="sec" open>
@@ -223,13 +243,13 @@ details.sec .grid { margin-top:8px; }
 </div>
 
 <!-- ============ PROTECAO CIVIL ============ -->
-<div class="tab" id="tab-civ">
+<div class="tab" id="tab-civ" role="tabpanel" aria-labelledby="tabbtn-civ" hidden>
   <div class="stack">
     <div class="card wide">
       <details class="sec" open>
         <summary data-t="civNow">Active warnings</summary>
         <div id="civ-list"></div>
-        <div class="msg" id="civ-status"></div>
+        <div class="msg" id="civ-status" aria-live="polite"></div>
       </details>
     </div>
     <div class="card wide">
@@ -265,7 +285,7 @@ details.sec .grid { margin-top:8px; }
 </div>
 
 <!-- ============ FOOTBALL ============ -->
-<div class="tab" id="tab-football">
+<div class="tab" id="tab-football" role="tabpanel" aria-labelledby="tabbtn-football" hidden>
   <div class="stack">
     <div class="card wide">
       <details class="sec" open>
@@ -282,7 +302,7 @@ details.sec .grid { margin-top:8px; }
           </div>
         </div>
         <div class="row"><button type="button" class="g" id="add-club" data-t="addClub">Add club</button></div>
-        <div class="msg" id="add-msg"></div>
+        <div class="msg" id="add-msg" aria-live="polite"></div>
       </details>
     </div>
     <div class="card wide">
@@ -317,7 +337,7 @@ details.sec .grid { margin-top:8px; }
         <label class="f" data-t="apikey">API-Football key (TV only)</label>
         <input type="text" id="apikey" autocomplete="off" placeholder="...">
         <div class="row"><button type="button" class="g" id="savekey" data-t="savekey">Save key</button><button type="button" class="g" id="checkkey" data-t="checkkey">Check key</button></div>
-        <div class="msg" id="keymsg"></div>
+        <div class="msg" id="keymsg" aria-live="polite"></div>
       </details>
     </div>
     <div class="card wide">
@@ -325,7 +345,7 @@ details.sec .grid { margin-top:8px; }
         <summary data-t="simTitle">Goal simulation</summary>
         <div class="small" data-t="simNote">One button per club. Sends a real (silent) notification through Notification Center.</div>
         <div id="sim-grid" class="simgrid"></div>
-        <div class="msg" id="sim-msg"></div>
+        <div class="msg" id="sim-msg" aria-live="polite"></div>
       </details>
       <details class="sec">
         <summary data-t="simEdit">Edit the test clubs</summary>
@@ -367,7 +387,7 @@ details.sec .grid { margin-top:8px; }
 </div>
 
 <!-- ============ OTHER SPORTS ============ -->
-<div class="tab" id="tab-others">
+<div class="tab" id="tab-others" role="tabpanel" aria-labelledby="tabbtn-others" hidden>
   <div class="stack">
     <div class="card wide">
       <details class="sec" open>
@@ -384,7 +404,7 @@ details.sec .grid { margin-top:8px; }
           </div>
         </div>
         <div class="row"><button type="button" class="g" id="add-pick" data-t="addPick">Add</button></div>
-        <div class="msg" id="pick-msg"></div>
+        <div class="msg" id="pick-msg" aria-live="polite"></div>
       </details>
     </div>
     <div class="card wide">
@@ -413,7 +433,7 @@ details.sec .grid { margin-top:8px; }
 </div>
 
 <!-- ============ TECHNICAL ============ -->
-<div class="tab" id="tab-tech">
+<div class="tab" id="tab-tech" role="tabpanel" aria-labelledby="tabbtn-tech" hidden>
   <div class="stack">
     <div class="card wide">
       <details class="sec" open>
@@ -435,6 +455,12 @@ details.sec .grid { margin-top:8px; }
         <div class="row"><button type="button" class="g" id="clear-log" data-t="clearLog">Clear log</button></div>
       </details>
     </div>
+    <div class="card wide">
+      <details class="sec">
+        <summary data-t="techApi">API and examples</summary>
+        <pre id="api-help" class="small"></pre>
+      </details>
+    </div>
   </div>
 </div>
 
@@ -451,7 +477,7 @@ details.sec .grid { margin-top:8px; }
   var T = {
     en: {
       title:"TV alerts", saveAll:"Save all", testAll:"Test all", tabPrev:"Previous", tabNext:"Next", unsaved:"Unsaved changes", savedAt:"Saved at ",
-      tabSetup:"SETUP", diagTitle:"Diagnostics", diagWatches:"Watched", diagLog:"Log", diagHealth:"Providers", clearLog:"Clear log", tabWeather:"Weather", tabNews:"News", tabFootball:"Football", tabOthers:"Other sports", tabTech:"Technical",
+      tabSetup:"SETUP", techApi:"API and examples", diagTitle:"Diagnostics", diagWatches:"Watched", diagLog:"Log", diagHealth:"Providers", clearLog:"Clear log", confirmClear:"Click again: clear log", noAnswer:"No answer from the Shard: open the panel again", tabWeather:"Weather", tabNews:"News", tabFootball:"Football", tabOthers:"Other sports", tabTech:"Technical",
       modules:"Modules", sport:"Sport", weather:"Weather", news:"News", now:"Right now",
       weatherCard:"Weather", place:"Place", interval:"Interval (min)", seconds:"Banner (s)", mode:"Mode",
       quiet:"Quiet hours 23h-07h", style:"Style", sound:"Sound", test:"Test", save:"Save", savekey:"Save key",
@@ -494,7 +520,7 @@ details.sec .grid { margin-top:8px; }
     },
     pt: {
       title:"Alertas TV", saveAll:"Guardar tudo", testAll:"Testar tudo", tabPrev:"Anterior", tabNext:"Seguinte", unsaved:"Altera\u00E7\u00F5es por guardar", savedAt:"Guardado \u00E0s ",
-      tabSetup:"SETUP", diagTitle:"Diagn\u00F3stico", diagWatches:"Acompanhados", diagLog:"Registo", diagHealth:"Fornecedores", clearLog:"Limpar registo", tabWeather:"Tempo", tabNews:"Not\u00EDcias", tabFootball:"Futebol", tabOthers:"Outros desportos", tabTech:"T\u00E9cnico",
+      tabSetup:"SETUP", techApi:"API e exemplos", diagTitle:"Diagn\u00F3stico", diagWatches:"Acompanhados", diagLog:"Registo", diagHealth:"Fornecedores", clearLog:"Limpar registo", confirmClear:"Clique outra vez: limpar registo", noAnswer:"Sem resposta do Shard: abra o painel novamente", tabWeather:"Tempo", tabNews:"Not\u00EDcias", tabFootball:"Futebol", tabOthers:"Outros desportos", tabTech:"T\u00E9cnico",
       modules:"M\u00F3dulos", sport:"Desporto", weather:"Tempo", news:"Not\u00EDcias", now:"Agora",
       weatherCard:"Tempo", place:"Local", interval:"Intervalo (min)", seconds:"Banner (s)", mode:"Modo",
       quiet:"Sil\u00EAncio 23h-07h", style:"Estilo", sound:"Som", test:"Teste", save:"Guardar", savekey:"Guardar chave",
@@ -583,7 +609,7 @@ details.sec .grid { margin-top:8px; }
         if (!r.ok) { throw new Error((j && j.error) || ("HTTP " + r.status)); }
         return j;
       });
-    });
+    }, function () { throw new Error(tr("noAnswer")); });
   }
   function act(btn, promise) {
     if (!btn || btn.disabled) { return; }
@@ -967,6 +993,9 @@ details.sec .grid { margin-top:8px; }
           (hp.okAt ? ' <span class="small">' + esc(fmtWhen(new Date(hp.okAt).toISOString())) + "</span>" : "") + "</div>";
       }
       $("diag-health").innerHTML = hh || tr("noneyet");
+      $("api-help").textContent = lang === "pt"
+        ? "Estado publico (sem chaves):\n  curl http://<TV-IP>:8099/plugins/match-alerts/api/last\n\nRotas:\n  GET  /api/state    estado completo (painel)\n  GET  /api/last     vista publica\n  POST /api/test     {kind:goal|weather|news|civ}\n  POST /api/poll     {module:sport|weather|news|civ}\n  POST /api/clearlog esvazia o registo\n\nNota: o Vetro recusa pedidos com Origin de outro site; use um script na TV ou localhost."
+        : "Public state (no keys):\n  curl http://<TV-IP>:8099/plugins/match-alerts/api/last\n\nRoutes:\n  GET  /api/state    full state (panel only)\n  GET  /api/last     public read-only view\n  POST /api/test     {kind:goal|weather|news|civ}\n  POST /api/poll     {module:sport|weather|news|civ}\n  POST /api/clearlog empties the log\n\nNote: Vetro refuses requests with an Origin from another site; use a script on the TV or localhost.";
       $("tabnav-label").textContent = tabs[currentTab()].textContent;
       updateSaveState();
     });
@@ -993,16 +1022,20 @@ details.sec .grid { margin-top:8px; }
     for (i = 0; i < tabs.length; i++) { if (tabEnabled(tabs[i].getAttribute("data-tab"))) { out.push(i); } }
     return out;
   }
-  function applyTabVisibility() {
-    var i, name, on, pane, vis;
+  function updatePaneState() {
+    var i, name, on, active = tabs[currentTab()].getAttribute("data-tab"), pane;
     for (i = 0; i < tabs.length; i++) {
       name = tabs[i].getAttribute("data-tab"); on = tabEnabled(name);
-      tabs[i].style.display = on ? "" : "none";
+      tabs[i].hidden = !on;
+      tabs[i].setAttribute("aria-selected", name === active ? "true" : "false");
       pane = document.getElementById("tab-" + name);
-      if (pane) { pane.style.display = on ? "" : "none"; }
+      if (pane) { pane.hidden = !on || name !== active; }
     }
-    vis = visibleTabs();
+  }
+  function applyTabVisibility() {
+    var vis = visibleTabs();
     if (vis.length && vis.indexOf(currentTab()) < 0) { switchTab(vis[0]); }
+    else { updatePaneState(); }
   }
   function stepTab(delta) {
     var vis = visibleTabs(), pos = vis.indexOf(currentTab());
@@ -1017,6 +1050,7 @@ details.sec .grid { margin-top:8px; }
     var id = tabs[idx].getAttribute("data-tab"), panes = document.querySelectorAll(".tab"), i;
     for (i = 0; i < tabs.length; i++) { tabs[i].className = i === idx ? "on" : ""; }
     for (i = 0; i < panes.length; i++) { panes[i].className = panes[i].id === "tab-" + id ? "tab on" : "tab"; }
+    updatePaneState();
     $("tabnav-label").textContent = tabs[idx].textContent;
     $("tab-prev").disabled = false; $("tab-next").disabled = false;
     window.scrollTo(0, 0);
@@ -1040,8 +1074,18 @@ details.sec .grid { margin-top:8px; }
     });
     act(this, chain.then(function () { say(tr("sent"), "ok"); }));
   });
+  // Dialogs do not work in the sandbox: a second click within 5 s confirms, as in the Bedtime Shard.
+  var clearArmed = null;
   $("clear-log").addEventListener("click", function () {
-    act(this, api("clearlog", {}).then(function () { $("diag-log").innerHTML = "\u2014"; }));
+    var btn = this;
+    if (!clearArmed) {
+      clearArmed = setTimeout(function () { clearArmed = null; btn.textContent = tr("clearLog"); }, 5000);
+      btn.textContent = tr("confirmClear");
+      return;
+    }
+    clearTimeout(clearArmed); clearArmed = null;
+    btn.textContent = tr("clearLog");
+    act(btn, api("clearlog", {}).then(function () { $("diag-log").innerHTML = "\u2014"; }));
   });
   // Switching the panel language must not throw away clubs or sources added but not saved yet.
   function setLang(l) {

@@ -76,6 +76,14 @@ function assert(ok, msg) { if (!ok) { throw new Error('FAILED: ' + msg); } conso
   var query = await call('geocode', 'GET', null, '/api/geocode?name=%ZZ');
   assert(query.code === 200 || query.code === 400, 'malformed query escapes do not throw');
 
+  var card = shard.card();
+  assert(card.rows.length <= 7 && card.choosable === true, 'Control center card returns at most 7 choosable rows');
+  assert(card.rows.some(function (r) { return r.id === 'check-civ'; }), 'card offers a civil-protection check');
+  assert(shard.cardSelect('check-weather').ok === true, 'cardSelect runs a manual check');
+  assert(shard.cardSelect('bogus').ok === false, 'unknown card action is refused');
+  var detail = shard.status();
+  assert('civ' in detail && 'health' in detail, 'dashboard status includes civ and provider health');
+
   shard.stop();
   console.log('\nALL GOOD');
 })().catch(function (e) { console.error(e.stack); process.exit(1); });

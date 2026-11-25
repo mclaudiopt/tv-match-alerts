@@ -1,6 +1,6 @@
 # TV alerts — bugs, correções e melhorias
 
-Estado: código e TV em **0.5.37**; Notification Center **0.14.0**. Por decisão do Marcelo, **não implementar** a chave API-Football (P1-5) nem a deduplicação de notícias (B5). ESPN é o fornecedor a usar. As três melhorias pedidas na última sessão estão feitas e fechadas abaixo; não há outras ideias em aberto.
+Estado: código e TV em **0.5.38**; Notification Center **0.14.0**. Por decisão do Marcelo, **não implementar** a chave API-Football (P1-5) nem a deduplicação de notícias (B5). ESPN é o fornecedor a usar. As três melhorias pedidas na última sessão estão feitas e fechadas abaixo; não há outras ideias em aberto.
 
 ---
 
@@ -49,7 +49,8 @@ Antes, dois picks com o mesmo desporto colidiam: a rota de config dedupava por `
 | 0.5.34 | Tradução de `mode`; picker F1 sem corridas passadas; log de fila como `notify`; botão Adicionar bloqueado sem lista; relatório de saúde dos fornecedores + Limpar registo; botão Testar tudo; remoção da duplicação de notícias de clube (só em Futebol). |
 | 0.5.35 | Novo separador **Técnico** com o Diagnóstico (antes em Geral), como no Shard do Notification Center; teste de Proteção Civil passa a enviar sempre um banner (aviso já visto, sem avisos ou módulo desligado). |
 | 0.5.36 | Separador Geral passa a chamar-se **SETUP**; os quatro interruptores de módulos mostram/ocultam as tabs correspondentes (Desporto = Futebol + Outros desportos; Proteção Civil usa `civ.enabled`); parâmetros mantidos. |
-| 0.5.37 | Auditoria: timers órfãos de banners, envios após stop, erros HTTP do NC não registados, escalação laranja→vermelho perdida, testes manuais em corrida com polls, pick F1 antigo seguir corrida errada, baseline legado parar o desporto, query malformada, sim vazio restaurado, tipos de config silently coercidos, retenção de hints/avisos. 21 testes. |
+| 0.5.37 | Auditoria: timers órfãos de banners, envios após stop, erros HTTP do NC não registados, escalação laranja→vermelho perdida, testes manuais em corrida com polls, pick F1 antigo seguir corrida errada, baseline legado parar o desporto, query malformada, sim vazio restaurado, tipos de config silentemente coercidos, retenção de hints/avisos. 21 testes. |
+| 0.5.38 | Design/accessibilidade (tema claro/escuro, tokens, max-width, ARIA, hidden, confirmação em 2 cliques, erro amigável, exemplos curl/rotas); cartão no Control center com ações Check now; `status()` com civ/saúde; gate ES5 no CI; PR para o catálogo oficial. |
 | várias | Vários clubes e competições, várias fontes, vários desportos, scoreboard só do clube escolhido, overlay, migração de configs antigas. |
 
 ---

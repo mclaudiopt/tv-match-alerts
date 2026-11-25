@@ -189,10 +189,12 @@ The mocked tests live in `tests/` (they require `../index.js`, so they need no T
 ```bat
 node tests\run.js
 npm test
+npm run lint:es5
 ```
 
 The runner requires each script to exit 0 **and** print `ALL GOOD`, so a test with no assertions cannot pass silently.
-`.github/workflows/test.yml` runs the same command on every push and pull request (Node 20, no TV needed).
+`npm run lint:es5` rejects ES6+ syntax in the four shipped Node files. `.github/workflows/test.yml` runs both checks on
+every push and pull request (Node 20, no TV needed).
 
 Use the script — it runs the Notification Center drift check **first**, builds a clean staging folder, runs
 `vetro check` and `vetro pack`, prints the sha256, and optionally installs and verifies on the TV:
@@ -268,4 +270,8 @@ host.
   escalation lost to dedupe, manual tests racing with polls, stale F1 picks following the wrong race, legacy baselines
   stalling sport polling, malformed query escapes, explicit empty sim lists being restored, silent config type coercion,
   and next-hint/weather-warning retention. 21 mocked tests, including new audit regressions.
+- 0.5.38: design/a11y pass — light and dark themes (`color-scheme`), shared tokens, centered `max-width:1040px`,
+  `role`/`aria-live`/`aria-selected` and `hidden` panes, focus ring, two-click Clear log, friendly offline error, and
+  `curl`/route examples in the Technical tab. Added a **Control center card** with four "Check now" actions plus the
+  next fixture, `civ`/`health` in `status()`, and an ES5 syntax gate in CI.
 - **`mode: "overlay"` confirmed working** with Notification Center 0.8.0.

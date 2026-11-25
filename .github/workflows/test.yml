@@ -12,5 +12,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Check ES5 syntax of shipped code
+        run: npm run lint:es5
       - name: Run all mocked Shard tests
         run: node tests/run.js

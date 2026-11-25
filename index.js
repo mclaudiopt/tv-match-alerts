@@ -1582,8 +1582,33 @@ module.exports = function (ctx) {
             newsApi.clear(); civSeen = {}; resetSport();
         },
         status: function () {
-            var s = status.sport;
-            return { sport: s.line || null, weather: status.weather.line || null, news: status.news.line || null, error: s.error || null };
+            var s = status.sport, hk = Object.keys(providerHealth), hs = [], i, h;
+            for (i = 0; i < hk.length; i++) {
+                h = providerHealth[hk[i]];
+                hs.push(hk[i] + ':' + (h.fails ? ('fail/' + h.fails) : 'ok'));
+            }
+            return {
+                sport: s.line || null, weather: status.weather.line || null, news: status.news.line || null,
+                civ: status.civ.line || null, error: s.error || null, health: hs.length ? hs.join(' ') : null
+            };
+        },
+        // One card in the launcher's Control center (Vetro 0.7+): quick "Check now" actions
+        // plus the current status lines. No extra permissions, no drawing on the TV.
+        card: function () {
+            var c = cfg(), next = nextList()[0], rows = [
+                { id: 'check-sport', label: c.lang === 'pt' ? 'Verificar desporto' : 'Check sport', value: status.sport.line || (c.lang === 'pt' ? 'parado' : 'idle') },
+                { id: 'check-weather', label: c.lang === 'pt' ? 'Verificar tempo' : 'Check weather', value: status.weather.line || (c.lang === 'pt' ? 'parado' : 'idle') },
+                { id: 'check-news', label: c.lang === 'pt' ? 'Verificar noticias' : 'Check news', value: status.news.line || (c.lang === 'pt' ? 'parado' : 'idle') },
+                { id: 'check-civ', label: c.lang === 'pt' ? 'Verificar proteccao civil' : 'Check civil protection', value: status.civ.line || (c.lang === 'pt' ? 'parado' : 'idle') }
+            ];
+            if (next) { rows.push({ id: 'next-game', label: c.lang === 'pt' ? 'Proximo jogo' : 'Next match', value: next.home + ' - ' + next.away + ' ' + next.line }); }
+            return { rows: rows.slice(0, 7), note: c.lang === 'pt' ? 'Acoes rapidas' : 'Quick actions', choosable: true };
+        },
+        cardSelect: function (rowId) {
+            if (!running) { return { ok: false, note: 'offline' }; }
+            var names = { 'check-sport': 'sport', 'check-weather': 'weather', 'check-news': 'news', 'check-civ': 'civ' };
+            if (names[rowId]) { poll(names[rowId], true); return { ok: true }; }
+            return { ok: false, note: 'unknown action' };
         },
         route: function (req, res, sub) {
             // Vetro passes only the path in `sub`; the query string is in req.url.
