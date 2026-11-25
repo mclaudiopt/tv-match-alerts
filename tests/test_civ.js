@@ -119,6 +119,18 @@ function assert(ok, msg) { if (!ok) { throw new Error('FAILED: ' + msg); } conso
   await post('test', { kind: 'civ' }); await wait(400);
   assert(sent.length >= 1, 'the civ test button sends a banner');
 
+  // The button must not go silent just because every active warning was already announced.
+  await wait(1300);
+  sent = [];
+  await post('test', { kind: 'civ' }); await wait(400);
+  assert(sent.length >= 1, 'the civ test still sends when the warning was already seen');
+
+  await wait(1300);
+  await post('config', { civ: { enabled: false } });
+  sent = [];
+  await post('test', { kind: 'civ' }); await wait(400);
+  assert(sent.length >= 1, 'the civ test works even with the module switched off');
+
   var bad = await post('config', { civ: { district: 'NOPE' } });
   assert(bad && bad.error, 'an unknown district is rejected');
   shard.stop();

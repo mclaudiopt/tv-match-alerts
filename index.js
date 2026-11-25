@@ -1223,7 +1223,8 @@ module.exports = function (ctx) {
         var c = cfg();
         status.civ.at = Date.now();
         status.civ.error = '';
-        if (!c.civ.enabled) { status.civ.line = ''; status.civ.state = ''; return schedule('civ', 300000); }
+        // A manual test must still show something when the module is switched off.
+        if (!c.civ.enabled && !manual) { status.civ.line = ''; status.civ.state = ''; return schedule('civ', 300000); }
         ipmaAlerts(c, function (ipma) {
             anepcAlerts(c, function (anepc) {
                 civNewsAlerts(c, function (news) {
@@ -1246,6 +1247,24 @@ module.exports = function (ctx) {
                             civSeen[a.id] = true;
                             if (!first || manual) { civAnnounce(a, c); sent++; }
                         }
+                    }
+                    if (manual && !sent) {
+                        // Unlike the real poll, the Test button must always produce a banner even
+                        // when every active warning was already announced (or none is active).
+                        var sample = null, sj;
+                        for (sj = 0; sj < civAlerts.length; sj++) {
+                            if (c.civ.levels[civAlerts[sj].level] || civAlerts[sj].level === 'warn') { sample = civAlerts[sj]; break; }
+                        }
+                        if (!sample) {
+                            sample = {
+                                level: 'orange', source: 'IPMA', type: c.lang === 'pt' ? 'Aviso de teste' : 'Test warning',
+                                title: c.lang === 'pt' ? 'Teste de prote\u00E7\u00E3o civil' : 'Civil protection test',
+                                message: c.lang === 'pt' ? 'Isto \u00E9 apenas um teste.' : 'This is only a test.', endsAt: ''
+                            };
+                        }
+                        civAnnounce(sample, c);
+                        sent++;
+                        addLog('test', 'civ', sample.title);
                     }
                     if (Object.keys(civSeen).length > 120) { civSeen = { __init: true }; }
                     addLog('civ', 'poll', civAlerts.length + ' alerts, ' + sent + ' sent');

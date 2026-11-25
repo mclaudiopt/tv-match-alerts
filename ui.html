@@ -91,6 +91,7 @@ details.sec .grid { margin-top:8px; }
   <button type="button" data-tab="civ" data-t="tabCiv">Prote\u00E7\u00E3o Civil</button>
   <button type="button" data-tab="football" data-t="tabFootball">Football</button>
   <button type="button" data-tab="others" data-t="tabOthers">Other sports</button>
+  <button type="button" data-tab="tech" data-t="tabTech">Technical</button>
 </div>
 
 <!-- ============ GENERAL ============ -->
@@ -115,26 +116,6 @@ details.sec .grid { margin-top:8px; }
       </details>
     </div>
     <div class="card wide">
-      <details class="sec">
-        <summary data-t="diagTitle">Diagnostics</summary>
-        <div class="grid" style="margin-top:10px">
-          <div>
-            <div class="f" data-t="diagWatches">Watched</div>
-            <div id="diag-watches" class="small"></div>
-          </div>
-          <div>
-            <div class="f" data-t="diagLog">Log</div>
-            <div id="diag-log" class="small"></div>
-          </div>
-          <div>
-            <div class="f" data-t="diagHealth">Providers</div>
-            <div id="diag-health" class="small"></div>
-          </div>
-        </div>
-        <div class="row"><button type="button" class="g" id="clear-log" data-t="clearLog">Clear log</button></div>
-        </details>
-      </div>
-      <div class="card wide">
         <div class="row"><button type="button" class="p" id="save-mod" data-t="save">Save</button></div>
       </div>
     </div>
@@ -430,6 +411,32 @@ details.sec .grid { margin-top:8px; }
   </div>
 </div>
 
+<!-- ============ TECHNICAL ============ -->
+<div class="tab" id="tab-tech">
+  <div class="stack">
+    <div class="card wide">
+      <details class="sec" open>
+        <summary data-t="diagTitle">Diagnostics</summary>
+        <div class="grid" style="margin-top:10px">
+          <div>
+            <div class="f" data-t="diagWatches">Watched</div>
+            <div id="diag-watches" class="small"></div>
+          </div>
+          <div>
+            <div class="f" data-t="diagLog">Log</div>
+            <div id="diag-log" class="small"></div>
+          </div>
+          <div>
+            <div class="f" data-t="diagHealth">Providers</div>
+            <div id="diag-health" class="small"></div>
+          </div>
+        </div>
+        <div class="row"><button type="button" class="g" id="clear-log" data-t="clearLog">Clear log</button></div>
+      </details>
+    </div>
+  </div>
+</div>
+
 <div class="tabnav" id="tabnav">
   <button type="button" class="g" id="tab-prev" data-t="tabPrev">Previous</button>
   <span class="small" id="tabnav-label"></span>
@@ -443,7 +450,7 @@ details.sec .grid { margin-top:8px; }
   var T = {
     en: {
       title:"TV alerts", saveAll:"Save all", testAll:"Test all", tabPrev:"Previous", tabNext:"Next", unsaved:"Unsaved changes", savedAt:"Saved at ",
-      tabGeneral:"General", diagTitle:"Diagnostics", diagWatches:"Watched", diagLog:"Log", diagHealth:"Providers", clearLog:"Clear log", tabWeather:"Weather", tabNews:"News", tabFootball:"Football", tabOthers:"Other sports",
+      tabGeneral:"General", diagTitle:"Diagnostics", diagWatches:"Watched", diagLog:"Log", diagHealth:"Providers", clearLog:"Clear log", tabWeather:"Weather", tabNews:"News", tabFootball:"Football", tabOthers:"Other sports", tabTech:"Technical",
       modules:"Modules", sport:"Sport", weather:"Weather", news:"News", now:"Right now",
       weatherCard:"Weather", place:"Place", interval:"Interval (min)", seconds:"Banner (s)", mode:"Mode",
       quiet:"Quiet hours 23h-07h", style:"Style", sound:"Sound", test:"Test", save:"Save", savekey:"Save key",
@@ -486,7 +493,7 @@ details.sec .grid { margin-top:8px; }
     },
     pt: {
       title:"Alertas TV", saveAll:"Guardar tudo", testAll:"Testar tudo", tabPrev:"Anterior", tabNext:"Seguinte", unsaved:"Altera\u00E7\u00F5es por guardar", savedAt:"Guardado \u00E0s ",
-      tabGeneral:"Geral", diagTitle:"Diagn\u00F3stico", diagWatches:"Acompanhados", diagLog:"Registo", diagHealth:"Fornecedores", clearLog:"Limpar registo", tabWeather:"Tempo", tabNews:"Not\u00EDcias", tabFootball:"Futebol", tabOthers:"Outros desportos",
+      tabGeneral:"Geral", diagTitle:"Diagn\u00F3stico", diagWatches:"Acompanhados", diagLog:"Registo", diagHealth:"Fornecedores", clearLog:"Limpar registo", tabWeather:"Tempo", tabNews:"Not\u00EDcias", tabFootball:"Futebol", tabOthers:"Outros desportos", tabTech:"T\u00E9cnico",
       modules:"M\u00F3dulos", sport:"Desporto", weather:"Tempo", news:"Not\u00EDcias", now:"Agora",
       weatherCard:"Tempo", place:"Local", interval:"Intervalo (min)", seconds:"Banner (s)", mode:"Modo",
       quiet:"Sil\u00EAncio 23h-07h", style:"Estilo", sound:"Som", test:"Teste", save:"Guardar", savekey:"Guardar chave",

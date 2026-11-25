@@ -4,7 +4,7 @@ One Vetro Shard for Samsung TVs that sends **sport, weather, news and civil-prot
 [Notification Center](https://github.com/mclaudiopt/tv-notification-center) (Shard 0.8.0+ and companion app 0.2.2+ on the same TV).
 Everything runs on the TV; no PC is needed at runtime. The Shard keeps the id `match-alerts` so an existing installation keeps its configuration.
 
-The panel has six tabs: **General**, **Weather**, **News**, **Proteção Civil**, **Football** and **Other sports**. Each tab is split into collapsible sections, and the goal simulation lives inside Football. The tab bar stays at the top while scrolling, **Previous/Next** at the bottom move between tabs, and the header has **Test all** (runs the sport, weather, news and civil-protection tests in order) and **Save all**, which shows whether anything is still unsaved. **Diagnostics** in General lists watched matches, the last log lines, provider health (last success/failure and consecutive failures) and a **Clear log** button.
+The panel has seven tabs: **General**, **Weather**, **News**, **Proteção Civil**, **Football**, **Other sports** and **Technical** (Técnico). Each tab is split into collapsible sections, and the goal simulation lives inside Football. The tab bar stays at the top while scrolling, **Previous/Next** at the bottom move between tabs, and the header has **Test all** (runs the sport, weather, news and civil-protection tests in order) and **Save all**, which shows whether anything is still unsaved. The **Technical** tab holds Diagnostics: watched matches, last log lines, provider health (last success/failure and consecutive failures) and a **Clear log** button — the same place the Notification Center Shard puts its technical information.
 
 ## General
 
@@ -129,7 +129,9 @@ A separate module polls three official/complementary sources every 10 min and se
 
 The tab lists the active warnings with source, level, validity and official link, and has controls for district, levels,
 sources, keywords, interval, duration, sound and style. The first poll is a baseline; each alert is announced once
-(stable id = source + area + type + start). Everything is sent through Notification Center — the Shard never draws on the TV itself.
+(stable id = source + area + type + start). **Test** always shows a banner: it reuses the highest-priority allowed active
+warning even if it was already announced, or a clearly labelled sample when there is none (and works with the module
+switched off). Everything is sent through Notification Center — the Shard never draws on the TV itself.
 
 An emergency warning from ANEPC always takes precedence over a generic news story; a coastal yellow warning is shown
 as such, not as a general urban emergency. No routine police/fire news is shown without a matching keyword.
@@ -255,4 +257,6 @@ host.
   exposed in `state`/`last`, `POST /api/clearlog` empties the log, all panel `data-t` keys are translated (`mode` was
   missing), and queue drops are logged as `notify/queue`. The duplicate club-news card was removed from the News tab;
   club news is configured only in Football.
+- 0.5.35: new **Technical** tab holds Diagnostics (moved out of General), and the civil-protection **Test** button
+  always announces a banner even when warnings are already seen, none are active, or the module is switched off.
 - **`mode: "overlay"` confirmed working** with Notification Center 0.8.0.
