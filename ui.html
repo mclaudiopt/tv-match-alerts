@@ -85,7 +85,7 @@ details.sec .grid { margin-top:8px; }
 </div>
 
 <div class="tabs">
-  <button type="button" data-tab="general" class="on" data-t="tabGeneral">General</button>
+  <button type="button" data-tab="setup" class="on" data-t="tabSetup">SETUP</button>
   <button type="button" data-tab="weather" data-t="tabWeather">Weather</button>
   <button type="button" data-tab="news" data-t="tabNews">News</button>
   <button type="button" data-tab="civ" data-t="tabCiv">Prote\u00E7\u00E3o Civil</button>
@@ -95,7 +95,7 @@ details.sec .grid { margin-top:8px; }
 </div>
 
 <!-- ============ GENERAL ============ -->
-<div class="tab on" id="tab-general">
+<div class="tab on" id="tab-setup">
   <div class="stack">
     <div class="card wide">
       <details class="sec" open>
@@ -103,6 +103,7 @@ details.sec .grid { margin-top:8px; }
         <label class="chk"><input type="checkbox" id="m-sport"> <span data-t="sport">Sport</span></label>
         <label class="chk"><input type="checkbox" id="m-weather"> <span data-t="weather">Weather</span></label>
         <label class="chk"><input type="checkbox" id="m-news"> <span data-t="news">News</span></label>
+        <label class="chk"><input type="checkbox" id="m-civ"> <span data-t="tabCiv">Proteção Civil</span></label>
       </details>
     </div>
     <div class="card wide">
@@ -450,7 +451,7 @@ details.sec .grid { margin-top:8px; }
   var T = {
     en: {
       title:"TV alerts", saveAll:"Save all", testAll:"Test all", tabPrev:"Previous", tabNext:"Next", unsaved:"Unsaved changes", savedAt:"Saved at ",
-      tabGeneral:"General", diagTitle:"Diagnostics", diagWatches:"Watched", diagLog:"Log", diagHealth:"Providers", clearLog:"Clear log", tabWeather:"Weather", tabNews:"News", tabFootball:"Football", tabOthers:"Other sports", tabTech:"Technical",
+      tabSetup:"SETUP", diagTitle:"Diagnostics", diagWatches:"Watched", diagLog:"Log", diagHealth:"Providers", clearLog:"Clear log", tabWeather:"Weather", tabNews:"News", tabFootball:"Football", tabOthers:"Other sports", tabTech:"Technical",
       modules:"Modules", sport:"Sport", weather:"Weather", news:"News", now:"Right now",
       weatherCard:"Weather", place:"Place", interval:"Interval (min)", seconds:"Banner (s)", mode:"Mode",
       quiet:"Quiet hours 23h-07h", style:"Style", sound:"Sound", test:"Test", save:"Save", savekey:"Save key",
@@ -493,7 +494,7 @@ details.sec .grid { margin-top:8px; }
     },
     pt: {
       title:"Alertas TV", saveAll:"Guardar tudo", testAll:"Testar tudo", tabPrev:"Anterior", tabNext:"Seguinte", unsaved:"Altera\u00E7\u00F5es por guardar", savedAt:"Guardado \u00E0s ",
-      tabGeneral:"Geral", diagTitle:"Diagn\u00F3stico", diagWatches:"Acompanhados", diagLog:"Registo", diagHealth:"Fornecedores", clearLog:"Limpar registo", tabWeather:"Tempo", tabNews:"Not\u00EDcias", tabFootball:"Futebol", tabOthers:"Outros desportos", tabTech:"T\u00E9cnico",
+      tabSetup:"SETUP", diagTitle:"Diagn\u00F3stico", diagWatches:"Acompanhados", diagLog:"Registo", diagHealth:"Fornecedores", clearLog:"Limpar registo", tabWeather:"Tempo", tabNews:"Not\u00EDcias", tabFootball:"Futebol", tabOthers:"Outros desportos", tabTech:"T\u00E9cnico",
       modules:"M\u00F3dulos", sport:"Desporto", weather:"Tempo", news:"Not\u00EDcias", now:"Agora",
       weatherCard:"Tempo", place:"Local", interval:"Intervalo (min)", seconds:"Banner (s)", mode:"Modo",
       quiet:"Sil\u00EAncio 23h-07h", style:"Estilo", sound:"Som", test:"Teste", save:"Guardar", savekey:"Guardar chave",
@@ -773,6 +774,7 @@ details.sec .grid { margin-top:8px; }
     $("wp-heatc").value = wp.heatC || 35; $("wp-stormcode").value = wp.stormCode || 95;
 
     $("civ-enabled").checked = !!cv.enabled;
+    $("m-civ").checked = !!cv.enabled;
     fillSel($("civ-district"), c.civAreas || [], cv.district);
     $("civ-yellow").checked = !!clv.yellow; $("civ-orange").checked = !!clv.orange; $("civ-red").checked = !!clv.red;
     $("civ-anepc").checked = !!cv.anepc; $("civ-news").checked = !!cv.news;
@@ -785,6 +787,7 @@ details.sec .grid { margin-top:8px; }
     fillSel($("add-sport"), [{ id: "", name: tr("none") }].concat(c.otherSports), "");
     loadTeams($("add-league").value, $("add-team"));
     loadTeams2();
+    applyTabVisibility();
     dirty = false;
   }
   function loadTeams(league, el) {
@@ -975,6 +978,39 @@ details.sec .grid { margin-top:8px; }
     for (var i = 0; i < tabs.length; i++) { if (tabs[i].className.indexOf("on") >= 0) { return i; } }
     return 0;
   }
+  // Setup and Technical are always visible. The other tabs follow the module switches in Setup;
+  // hiding a tab never clears its configuration, it only hides the button and pane.
+  function tabEnabled(name) {
+    if (name === "setup" || name === "tech") { return true; }
+    if (name === "weather") { return $("m-weather").checked; }
+    if (name === "news") { return $("m-news").checked; }
+    if (name === "civ") { return $("m-civ").checked; }
+    if (name === "football" || name === "others") { return $("m-sport").checked; }
+    return true;
+  }
+  function visibleTabs() {
+    var out = [], i;
+    for (i = 0; i < tabs.length; i++) { if (tabEnabled(tabs[i].getAttribute("data-tab"))) { out.push(i); } }
+    return out;
+  }
+  function applyTabVisibility() {
+    var i, name, on, pane, vis;
+    for (i = 0; i < tabs.length; i++) {
+      name = tabs[i].getAttribute("data-tab"); on = tabEnabled(name);
+      tabs[i].style.display = on ? "" : "none";
+      pane = document.getElementById("tab-" + name);
+      if (pane) { pane.style.display = on ? "" : "none"; }
+    }
+    vis = visibleTabs();
+    if (vis.length && vis.indexOf(currentTab()) < 0) { switchTab(vis[0]); }
+  }
+  function stepTab(delta) {
+    var vis = visibleTabs(), pos = vis.indexOf(currentTab());
+    if (!vis.length) { return; }
+    if (pos < 0) { pos = 0; }
+    pos = Math.max(0, Math.min(vis.length - 1, pos + delta));
+    switchTab(vis[pos]);
+  }
   function switchTab(idx) {
     if (idx < 0) { idx = tabs.length - 1; }
     if (idx >= tabs.length) { idx = 0; }
@@ -990,8 +1026,8 @@ details.sec .grid { margin-top:8px; }
       for (var i = 0; i < tabs.length; i++) { if (tabs[i] === this) { switchTab(i); return; } }
     });
   }
-  $("tab-prev").addEventListener("click", function () { switchTab(currentTab() - 1); });
-  $("tab-next").addEventListener("click", function () { switchTab(currentTab() + 1); });
+  $("tab-prev").addEventListener("click", function () { stepTab(-1); });
+  $("tab-next").addEventListener("click", function () { stepTab(1); });
   $("save-all").addEventListener("click", function () {
     act(this, save().then(function () { say(tr("saved"), "ok"); }));
   });
@@ -1029,6 +1065,12 @@ details.sec .grid { margin-top:8px; }
   document.body.addEventListener("change", function (e) {
     var t = e.target;
     if (t && (t.tagName === "INPUT" || t.tagName === "SELECT") && t.id !== "test-club") { dirty = true; updateSaveState(); }
+    if (t && (t.id === "m-civ" || t.id === "civ-enabled")) {
+      $("m-civ").checked = t.checked; $("civ-enabled").checked = t.checked;
+      applyTabVisibility();
+    } else if (t && /^m-(sport|weather|news)$/.test(t.id)) {
+      applyTabVisibility();
+    }
     if (t && t.id === "add-league") { loadTeams(t.value, $("add-team")); }
     if (t && t.id === "add-sport") { loadTeams2(); }
     if (t && t.id === "f-provider") { loadTeams($("add-league").value, $("add-team")); }

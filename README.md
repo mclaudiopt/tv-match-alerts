@@ -4,9 +4,9 @@ One Vetro Shard for Samsung TVs that sends **sport, weather, news and civil-prot
 [Notification Center](https://github.com/mclaudiopt/tv-notification-center) (Shard 0.8.0+ and companion app 0.2.2+ on the same TV).
 Everything runs on the TV; no PC is needed at runtime. The Shard keeps the id `match-alerts` so an existing installation keeps its configuration.
 
-The panel has seven tabs: **General**, **Weather**, **News**, **Proteção Civil**, **Football**, **Other sports** and **Technical** (Técnico). Each tab is split into collapsible sections, and the goal simulation lives inside Football. The tab bar stays at the top while scrolling, **Previous/Next** at the bottom move between tabs, and the header has **Test all** (runs the sport, weather, news and civil-protection tests in order) and **Save all**, which shows whether anything is still unsaved. The **Technical** tab holds Diagnostics: watched matches, last log lines, provider health (last success/failure and consecutive failures) and a **Clear log** button — the same place the Notification Center Shard puts its technical information.
+The panel has seven tabs: **SETUP** (formerly General), **Weather**, **News**, **Proteção Civil**, **Football**, **Other sports** and **Technical** (Técnico). The Modules switches in SETUP control which tabs are available: **Sport** shows/hides both Football and Other sports, **Weather** and **News** show/hide their own tabs, and **Proteção Civil** uses the existing `civ.enabled` setting (the two switches stay in sync). SETUP and Technical are always visible, Previous/Next skip hidden tabs, and hiding a tab keeps all its saved parameters. Each tab is split into collapsible sections, and the goal simulation lives inside Football. The tab bar stays at the top while scrolling, and the header has **Test all** (runs the sport, weather, news and civil-protection tests in order) and **Save all**, which shows whether anything is still unsaved. The **Technical** tab holds Diagnostics: watched matches, last log lines, provider health (last success/failure and consecutive failures) and a **Clear log** button — the same place the Notification Center Shard puts its technical information.
 
-## General
+## SETUP (General)
 
 | Module | Source | What it sends |
 |---|---|---|
@@ -88,7 +88,7 @@ Each competition is fetched once per cycle and shared by every club that follows
 request, not two. A competition with no matches is skipped for 5 minutes, one with matches for 2 minutes, and one with
 a live match (or a kick-off within 30 min) is polled every 20 s. The scoreboard only ever shows a match of one of your clubs.
 
-**Next match**: **General → Right now** also lists the next fixture of each club ("Sporting CP: Sporting CP × FC Porto ·
+**Next match**: **SETUP → Right now** also lists the next fixture of each club ("Sporting CP: Sporting CP × FC Porto ·
 Sat 29 Nov, 20:30"). It is found by scanning the competition scoreboards day by day (ESPN accepts one date per request),
 shared between clubs and cached for an hour. In **Football → Style** you can turn on **Warn before kick-off** and pick
 0/15/30/60 minutes (30 by default): one overlay banner per fixture is sent inside that window. Nothing is shown while
@@ -259,4 +259,7 @@ host.
   club news is configured only in Football.
 - 0.5.35: new **Technical** tab holds Diagnostics (moved out of General), and the civil-protection **Test** button
   always announces a banner even when warnings are already seen, none are active, or the module is switched off.
+- 0.5.36: the General tab is now **SETUP**, and its four module switches show/hide the matching tabs (Sport covers
+  Football + Other sports, Civil protection uses `civ.enabled`); SETUP and Technical stay visible and parameters are
+  preserved when a tab is hidden.
 - **`mode: "overlay"` confirmed working** with Notification Center 0.8.0.
