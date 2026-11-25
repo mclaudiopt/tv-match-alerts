@@ -79,6 +79,7 @@ details.sec .grid { margin-top:8px; }
   <h1 data-t="title">TV alerts</h1>
   <span class="ver" id="ver"></span>
   <span class="msg" id="save-state"></span>
+  <button type="button" class="g" id="test-all" data-t="testAll">Test all</button>
   <button type="button" class="p" id="save-all" data-t="saveAll">Save all</button>
   <div class="lang"><button type="button" id="l-en">EN</button><button type="button" id="l-pt">PT</button></div>
 </div>
@@ -125,6 +126,12 @@ details.sec .grid { margin-top:8px; }
             <div class="f" data-t="diagLog">Log</div>
             <div id="diag-log" class="small"></div>
           </div>
+          <div>
+            <div class="f" data-t="diagHealth">Providers</div>
+            <div id="diag-health" class="small"></div>
+          </div>
+        </div>
+        <div class="row"><button type="button" class="g" id="clear-log" data-t="clearLog">Clear log</button></div>
         </details>
       </div>
       <div class="card wide">
@@ -205,13 +212,6 @@ details.sec .grid { margin-top:8px; }
         <summary data-t="sources">News sources</summary>
         <div class="comps" id="feeds"></div>
         <div class="small" data-t="sourcesNote">Pick as many as you like. Each source keeps its own history.</div>
-      </details>
-    </div>
-    <div class="card wide">
-      <details class="sec" open>
-        <summary data-t="clubNews">Club news</summary>
-        <div id="club-news"></div>
-        <div class="small" data-t="clubNewsNote">Headlines about the club, in the panel language, from Google News.</div>
       </details>
     </div>
     <div class="card wide">
@@ -442,14 +442,14 @@ details.sec .grid { margin-top:8px; }
   var $ = function (id) { return document.getElementById(id); };
   var T = {
     en: {
-      title:"TV alerts", saveAll:"Save all", tabPrev:"Previous", tabNext:"Next", unsaved:"Unsaved changes", savedAt:"Saved at ",
-      tabGeneral:"General", diagTitle:"Diagnostics", diagWatches:"Watched", diagLog:"Log", tabWeather:"Weather", tabNews:"News", tabFootball:"Football", tabOthers:"Other sports",
+      title:"TV alerts", saveAll:"Save all", testAll:"Test all", tabPrev:"Previous", tabNext:"Next", unsaved:"Unsaved changes", savedAt:"Saved at ",
+      tabGeneral:"General", diagTitle:"Diagnostics", diagWatches:"Watched", diagLog:"Log", diagHealth:"Providers", clearLog:"Clear log", tabWeather:"Weather", tabNews:"News", tabFootball:"Football", tabOthers:"Other sports",
       modules:"Modules", sport:"Sport", weather:"Weather", news:"News", now:"Right now",
-      weatherCard:"Weather", place:"Place", interval:"Interval (min)", seconds:"Banner (s)",
+      weatherCard:"Weather", place:"Place", interval:"Interval (min)", seconds:"Banner (s)", mode:"Mode",
       quiet:"Quiet hours 23h-07h", style:"Style", sound:"Sound", test:"Test", save:"Save", savekey:"Save key",
       checkkey:"Check key", check:"Check now", sources:"News sources",
       sourcesNote:"Pick as many as you like. Each source keeps its own history.",
-      clubNews:"Club news", clubNewsNote:"Headlines about the club, in the panel language, from Google News.",
+
       newsSettings:"News settings", headlines:"Headlines per source",
       clubs:"Clubs", league:"League", team:"Team", addClub:"Add club",
       alerts:"Alerts", a_goal:"Goal for my club", a_against:"Goal for the opponent",
@@ -485,14 +485,14 @@ details.sec .grid { margin-top:8px; }
       simEdit:"Edit the test clubs", simId:"ESPN id", simMsg:"Message", simColor:"Stripe colour", volume:"Volume"
     },
     pt: {
-      title:"Alertas TV", saveAll:"Guardar tudo", tabPrev:"Anterior", tabNext:"Seguinte", unsaved:"Altera\u00E7\u00F5es por guardar", savedAt:"Guardado \u00E0s ",
-      tabGeneral:"Geral", diagTitle:"Diagn\u00F3stico", diagWatches:"Acompanhados", diagLog:"Registo", tabWeather:"Tempo", tabNews:"Not\u00EDcias", tabFootball:"Futebol", tabOthers:"Outros desportos",
+      title:"Alertas TV", saveAll:"Guardar tudo", testAll:"Testar tudo", tabPrev:"Anterior", tabNext:"Seguinte", unsaved:"Altera\u00E7\u00F5es por guardar", savedAt:"Guardado \u00E0s ",
+      tabGeneral:"Geral", diagTitle:"Diagn\u00F3stico", diagWatches:"Acompanhados", diagLog:"Registo", diagHealth:"Fornecedores", clearLog:"Limpar registo", tabWeather:"Tempo", tabNews:"Not\u00EDcias", tabFootball:"Futebol", tabOthers:"Outros desportos",
       modules:"M\u00F3dulos", sport:"Desporto", weather:"Tempo", news:"Not\u00EDcias", now:"Agora",
-      weatherCard:"Tempo", place:"Local", interval:"Intervalo (min)", seconds:"Banner (s)",
+      weatherCard:"Tempo", place:"Local", interval:"Intervalo (min)", seconds:"Banner (s)", mode:"Modo",
       quiet:"Sil\u00EAncio 23h-07h", style:"Estilo", sound:"Som", test:"Teste", save:"Guardar", savekey:"Guardar chave",
       checkkey:"Testar chave", check:"Verificar agora", sources:"Fontes de not\u00EDcias",
       sourcesNote:"Escolha as que quiser. Cada fonte guarda o seu hist\u00F3rico.",
-      clubNews:"Not\u00EDcias do clube", clubNewsNote:"Manchetes sobre o clube, no idioma do painel, via Google News.",
+
       newsSettings:"Defini\u00E7\u00F5es de not\u00EDcias", headlines:"Manchetes por fonte",
       clubs:"Clubes", league:"Liga", team:"Equipa", addClub:"Adicionar clube",
       alerts:"Alertas", a_goal:"Golo do meu clube", a_against:"Golo do advers\u00E1rio",
@@ -538,7 +538,7 @@ details.sec .grid { margin-top:8px; }
       e.className = "msg ok";
     }
   }
-  var clubs = [], picks = [], feeds = [], geoResults = [], simClubs = [], raceListError = false;
+  var clubs = [], picks = [], feeds = [], geoResults = [], simClubs = [], pickListError = false;
   var CLUB_ALERTS = [
     ["goal","a_goal"], ["against","a_against"], ["card","a_card"], ["sub","a_sub"],
     ["varNo","a_var"], ["start","a_start"], ["half","a_half"], ["end","a_end"]
@@ -654,7 +654,7 @@ details.sec .grid { margin-top:8px; }
     // A race pick needs an ESPN event id: never fall back to the bare sport label, because every
     // such pick would then follow the same race.
     $("add-pick").disabled = !sp || !meta || !!(cfg.maxPicks && picks.length >= cfg.maxPicks) ||
-      (!meta.teams && raceListError);
+      pickListError;
   }
   function renderPicks() {
     var box = $("picks"), i, k, html = "", label;
@@ -676,15 +676,6 @@ details.sec .grid { margin-top:8px; }
         (feeds.indexOf(f.id) >= 0 ? " checked" : "") + "> <span>" + esc(f.name) + "</span></label>";
     }).join("");
   }
-  function renderClubNews() {
-    var box = $("club-news");
-    if (!clubs.length) { box.innerHTML = '<div class="msg">' + esc(tr("noClubs")) + "</div>"; return; }
-    box.innerHTML = clubs.map(function (cl) {
-      return '<label class="chk"><input type="checkbox" data-cn="' + esc(cl.id) + '"' + (cl.news ? " checked" : "") +
-        "> <span>" + esc(cl.name) + "</span></label>";
-    }).join("");
-  }
-
   function simsay(s, cls) { var e = $("sim-msg"); if (e) { e.textContent = s || ""; e.className = "msg " + (cls || ""); } }
   function renderSim() {
     var box = $("sim-grid"), i, html = "";
@@ -763,7 +754,7 @@ details.sec .grid { margin-top:8px; }
     picks = JSON.parse(JSON.stringify(c.others.picks || []));
     feeds = (c.news.feeds || []).slice(0);
     simClubs = JSON.parse(JSON.stringify((c.sim && c.sim.clubs) || []));
-    renderClubs(); renderTestClubs(); renderPicks(); renderFeeds(); renderClubNews(); renderSim();
+    renderClubs(); renderTestClubs(); renderPicks(); renderFeeds();  renderSim();
 
     var cv = c.civ || {}, clv = cv.levels || {};
     var wp = (c.weather && c.weather.proactive) || {};
@@ -798,6 +789,7 @@ details.sec .grid { margin-top:8px; }
   function loadTeams2() {
     var sp = $("add-sport").value, el = $("add-team2"), meta = null, i;
     updatePickButton();
+    pickListError = false;
     if (!sp) { el.innerHTML = '<option value="">' + esc(tr("none")) + "</option>"; return; }
     for (i = 0; i < cfg.otherSports.length; i++) { if (cfg.otherSports[i].id === sp) { meta = cfg.otherSports[i]; } }
     if (!meta) { el.innerHTML = '<option value="">' + esc(tr("none")) + "</option>"; return; }
@@ -808,11 +800,13 @@ details.sec .grid { margin-top:8px; }
     api(route, args)
       .then(function (d) {
         var list = d.teams || d.races || [];
-        raceListError = !meta.teams && !list.length;
+        // A past Grand Prix can never alert again: keep the picker useful.
+        if (!meta.teams) { list = list.filter(function (x) { return !x.past; }); }
+        pickListError = !list.length;
         fillSel(el, list);
       })
       .catch(function () {
-        raceListError = !meta.teams;
+        pickListError = true;
         el.innerHTML = '<option value="">' + esc(tr(meta.teams ? "noTeams" : "noRaces")) + "</option>";
       });
   }
@@ -955,6 +949,14 @@ details.sec .grid { margin-top:8px; }
           " \u00B7 " + esc(lg.kind) + " \u00B7 " + esc(lg.text) + "</div>";
       }
       $("diag-log").innerHTML = lh || "\u2014";
+      var hv = d.health || {}, hk = Object.keys(hv), hh = "", hi, hn, hp;
+      for (hi = 0; hi < hk.length; hi++) {
+        hn = hk[hi]; hp = hv[hn];
+        hh += "<div><b>" + esc(hn) + "</b>: " + esc(hp.last || "ok") +
+          (hp.fails ? ' <span class="small">(' + esc(hp.fails) + ")</span>" : "") +
+          (hp.okAt ? ' <span class="small">' + esc(fmtWhen(new Date(hp.okAt).toISOString())) + "</span>" : "") + "</div>";
+      }
+      $("diag-health").innerHTML = hh || tr("noneyet");
       $("tabnav-label").textContent = tabs[currentTab()].textContent;
       updateSaveState();
     });
@@ -986,6 +988,18 @@ details.sec .grid { margin-top:8px; }
   $("save-all").addEventListener("click", function () {
     act(this, save().then(function () { say(tr("saved"), "ok"); }));
   });
+  // One click runs every module's test in order; the Shard spaces banners 1 s apart.
+  $("test-all").addEventListener("click", function () {
+    var chain = Promise.resolve(), kinds = ["goal", "weather", "news", "civ"];
+    kinds.forEach(function (kind) {
+      chain = chain.then(function () { return api("test", { kind: kind }); })
+        .then(function () { return new Promise(function (r) { setTimeout(r, 1100); }); });
+    });
+    act(this, chain.then(function () { say(tr("sent"), "ok"); }));
+  });
+  $("clear-log").addEventListener("click", function () {
+    act(this, api("clearlog", {}).then(function () { $("diag-log").innerHTML = "\u2014"; }));
+  });
   // Switching the panel language must not throw away clubs or sources added but not saved yet.
   function setLang(l) {
     lang = l; applyText();
@@ -1015,7 +1029,7 @@ details.sec .grid { margin-top:8px; }
       var id = t.getAttribute("data-feed"), i = feeds.indexOf(id);
       if (t.checked && i < 0) { feeds.push(id); }
       if (!t.checked && i >= 0) { feeds.splice(i, 1); }
-      renderClubNews();
+      
       save().catch(function (err) { say(tr("err") + err.message, "err"); });
     }
     if (t && t.getAttribute("data-cn")) {
@@ -1044,7 +1058,7 @@ details.sec .grid { margin-top:8px; }
       if (card2) {
         var cid3 = card2.getAttribute("data-id"), m;
         for (m = 0; m < clubs.length; m++) { if (clubs[m].id === cid3) { clubs[m].news = t.checked; } }
-        renderClubNews();
+        
         save().catch(function (err) { say(tr("err") + err.message, "err"); });
       }
     }
@@ -1080,7 +1094,7 @@ details.sec .grid { margin-top:8px; }
     if (box.getAttribute("data-id")) {
       var id = box.getAttribute("data-id"), i;
       for (i = 0; i < clubs.length; i++) { if (clubs[i].id === id) { clubs.splice(i, 1); } }
-      renderClubs(); renderClubNews();
+      renderClubs(); 
     } else {
       picks.splice(parseInt(box.getAttribute("data-i"), 10), 1);
       renderPicks();
@@ -1099,7 +1113,7 @@ details.sec .grid { margin-top:8px; }
     if (clubs.length >= max) { say(tr("maxClubs") + max, "err"); return; }
     for (i = 0; i < clubs.length; i++) { if (clubs[i].id === team) { say(tr("err") + "already added", "err"); return; } }
     clubs.push({ id: team, name: name, league: league, comps: compsFor(league).map(function (c) { return c.id; }), news: false });
-    renderClubs(); renderClubNews();
+    renderClubs(); 
     act(this, save().then(function () { say(tr("saved") + " (" + name + ")", "ok"); }));
   });
   $("add-pick").addEventListener("click", function () {
@@ -1108,7 +1122,7 @@ details.sec .grid { margin-top:8px; }
     if (cfg.maxPicks && picks.length >= cfg.maxPicks) { sayPick(tr("pickLimit") + cfg.maxPicks, "err"); return; }
     for (i = 0; i < cfg.otherSports.length; i++) { if (cfg.otherSports[i].id === sp) { meta = cfg.otherSports[i]; } }
     if (!meta) { return; }
-    if (!meta.teams && raceListError) { sayPick(tr("noRaces"), "err"); return; }
+    if (pickListError) { sayPick(tr(meta.teams ? "noTeams" : "noRaces"), "err"); return; }
     if (!el.value) { sayPick(tr(meta.teams ? "noTeams" : "noRaces"), "err"); return; }
     team = el.value;
     for (i = 0; i < el.options.length; i++) { if (el.options[i].value === team) { name = el.options[i].text; } }

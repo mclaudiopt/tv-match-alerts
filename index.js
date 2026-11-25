@@ -201,6 +201,13 @@ module.exports = function (ctx) {
     var nextWarned = {};               // fixture id -> true, so the pre-kick-off banner is sent once
     var weatherWarned = {};            // "type|hour" -> true, so a proactive weather alert is sent once
     var teamsCache = {}, log = [];
+    var providerHealth = {};        // provider -> { okAt, failAt, fails, last }
+    var HEALTH_HOSTS = {
+        'site.api.espn.com': 'espn',
+        'api.open-meteo.com': 'open-meteo',
+        'geocoding-api.open-meteo.com': 'open-meteo',
+        'api.ipma.pt': 'civ', 'prociv.gov.pt': 'civ', 'www.noticiasaominuto.com': 'civ'
+    };
     var status = {
         sport: { at: 0, error: '', line: '', state: '', next: 0 },
         weather: { at: 0, error: '', line: '', state: '', next: 0 },
@@ -318,9 +325,17 @@ module.exports = function (ctx) {
 
     // ---- HTTP -----------------------------------------------------------------------------------------------------------------
     function getRaw(host, p, headers, parse, cb) { getVia(https, host, p, headers, parse, cb); }
+    function noteHealth(host, ok, err) {
+        var h = String(host || ''), name = HEALTH_HOSTS[h];
+        if (!name && /news\.google|rtp\.pt|publico\.pt|observador\.pt|record\.pt|maisfutebol\.pt|bbc\.|cnn\.|sky\.|nytimes\.|wsj\.|apnews\.|reuters\./.test(h)) { name = 'rss'; }
+        if (!name) { return; }
+        var p = providerHealth[name] || (providerHealth[name] = { okAt: 0, failAt: 0, fails: 0, last: '' });
+        if (ok) { p.okAt = Date.now(); p.fails = 0; p.last = 'ok'; }
+        else { p.failAt = Date.now(); p.fails++; p.last = clean(String(err || 'error'), 120); }
+    }
     function getVia(lib, host, p, headers, parse, cb) {
         var done = false;
-        function end(err, data) { if (!done) { done = true; cb(err, data); } }
+        function end(err, data) { if (!done) { done = true; noteHealth(host, !err, err); cb(err, data); } }
         var h = { 'Accept-Encoding': 'identity', 'User-Agent': 'vetro-tv-alerts' }, k;
         for (k in headers) { if (headers.hasOwnProperty(k)) { h[k] = headers[k]; } }
         try {
@@ -454,7 +469,7 @@ module.exports = function (ctx) {
         }
         while (bannerQueue.length >= BANNER_QUEUE_MAX) {
             bannerQueue.shift();
-            addLog('sport', 'queue', 'banner queue full (' + BANNER_QUEUE_MAX + '): oldest banner dropped');
+            addLog('notify', 'queue', 'banner queue full (' + BANNER_QUEUE_MAX + '): oldest banner dropped');
         }
         bannerQueue.push(item);
         drainBannerQueue();
@@ -1529,9 +1544,10 @@ module.exports = function (ctx) {
             else { qi = String(sub || '').indexOf('?'); if (qi >= 0) { qs = String(sub).slice(qi + 1); } }
             sub = String(sub || '').split('?')[0].replace(/^\/+|\/+$/g, '');
             if (sub === 'ui' && req.method === 'GET') { sendFile(res, 'ui.html', 'text/html; charset=utf-8'); return true; }
+            if (sub === 'clearlog' && req.method === 'POST') { log.length = 0; sendJson(res, 200, { ok: true }); return true; }
             if (sub === 'state' && req.method === 'GET') {
                 sendJson(res, 200, { config: publicCfg(), status: status, watches: watchStatus, next: nextList(), civ: civAlerts,
-                    notify: { queued: bannerQueue.length, sentMinute: sendTimes.length }, log: log });
+                    notify: { queued: bannerQueue.length, sentMinute: sendTimes.length }, health: providerHealth, log: log });
                 return true;
             }
             // Public endpoint for widgets / a mini-site. Unlike /state it carries no config,
@@ -1541,7 +1557,8 @@ module.exports = function (ctx) {
                     version: VERSION, at: Date.now(), historyAt: historyAt,
                     status: status, watches: watchStatus, next: nextList(),
                     civ: civAlerts, last: publicLast(),
-                    notify: { queued: bannerQueue.length, sentMinute: sendTimes.length }, log: log.slice(0, 10)
+                    notify: { queued: bannerQueue.length, sentMinute: sendTimes.length }, health: providerHealth,
+                    log: log.slice(0, 10)
                 });
                 return true;
             }

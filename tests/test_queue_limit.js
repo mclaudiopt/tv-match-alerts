@@ -66,7 +66,7 @@ function assert(ok, msg) { if (!ok) { throw new Error('FAILED: ' + msg); } conso
   shard2.stop();
 
   console.log('\nALL GOOD');
-  // The mocked http.request leaves no real sockets, but the two Shards' timers can keep the loop
-  // alive on some Node versions. The assertions are done, so end explicitly.
+  // Under spawnSync with piped stdio, Node can keep a stdio Socket referenced after stop(), so the
+  // runner sees a timeout even though all assertions passed. End explicitly once the work is done.
   process.exit(0);
 })().catch(function (e) { console.error(e.stack); process.exit(1); });

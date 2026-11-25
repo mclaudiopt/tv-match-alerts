@@ -4,7 +4,7 @@ One Vetro Shard for Samsung TVs that sends **sport, weather, news and civil-prot
 [Notification Center](https://github.com/mclaudiopt/tv-notification-center) (Shard 0.8.0+ and companion app 0.2.2+ on the same TV).
 Everything runs on the TV; no PC is needed at runtime. The Shard keeps the id `match-alerts` so an existing installation keeps its configuration.
 
-The panel has six tabs: **General**, **Weather**, **News**, **Proteção Civil**, **Football** and **Other sports**. Each tab is split into collapsible sections, and the goal simulation lives inside Football. The tab bar stays at the top while scrolling, **Previous/Next** at the bottom move between tabs, and **Save all** in the header shows whether anything is still unsaved.
+The panel has six tabs: **General**, **Weather**, **News**, **Proteção Civil**, **Football** and **Other sports**. Each tab is split into collapsible sections, and the goal simulation lives inside Football. The tab bar stays at the top while scrolling, **Previous/Next** at the bottom move between tabs, and the header has **Test all** (runs the sport, weather, news and civil-protection tests in order) and **Save all**, which shows whether anything is still unsaved. **Diagnostics** in General lists watched matches, the last log lines, provider health (last success/failure and consecutive failures) and a **Clear log** button.
 
 ## General
 
@@ -105,7 +105,7 @@ takes that club's name, crest and style, so a club with custom alerts or a diffe
 without changing the others. Tests ignore the alert switches on purpose (a switch that is off still sends its test),
 and they never edit the followed clubs or consume the real kick-off warning.
 
-**Club news**: tick it on a club to get headlines about that club (Google News, in the panel language) in the News module.
+**Club news**: tick it on a club (Football tab only) to get headlines about that club (Google News, in the panel language) in the News module. The old duplicate **Club news** card in the News tab was removed, so the same club is never configured or announced twice.
 
 ## Goal simulation (inside Football)
 
@@ -210,10 +210,10 @@ if missing. Installing manually is `POST http://<TV-IP>:8099/plugins/install` (b
 `X-Vetro-Sha256: <sha256>`), then `POST /plugins/match-alerts/enable`; updating = disable, install, enable.
 
 Panel buttons show a spinner then a green/red flash. Routes: `/api/state` (full state, panel only), `/api/last`
-(read-only public view: `version`, `at`, `status`, `watches`, `next`, `civ`, `last`, `notify`, `log`; no config or keys),
+(read-only public view: `version`, `at`, `status`, `watches`, `next`, `civ`, `last`, `notify`, `health`, `log`; no config or keys),
 `/api/teams` (POST with `sport`/`league`), `/api/races` (whole F1 season for the picker, with a `season` flag and a
 current-scoreboard fallback),
-`/api/geocode` (POST with `name`), `/api/config`, `/api/test`, `/api/poll`
+`/api/geocode` (POST with `name`), `/api/config`, `/api/test`, `/api/poll`, `/api/clearlog` (POST, empties the log)
 and `/api/keycheck`. Note: Vetro's own auth gate still refuses cross-origin browser requests to plugin routes, so
 `/api/last` is readable by scripts on the TV / local LAN (no `Origin` header) but not by a browser mini-site on another
 host.
@@ -251,4 +251,8 @@ host.
 - 0.5.33 verified with mocked tests (`tests/run.js`, 19 scripts): `/api/races` lists the whole F1 season sorted by date
   and falls back to the current scoreboard; the banner queue is bounded and drops are logged; failed notify POSTs are
   logged. The race picker disables **Add** when no race list is available. CI runs the same tests on every push.
+- 0.5.34 verified with mocked tests (`tests/run.js`, 20 scripts): provider health is recorded for success/failure and
+  exposed in `state`/`last`, `POST /api/clearlog` empties the log, all panel `data-t` keys are translated (`mode` was
+  missing), and queue drops are logged as `notify/queue`. The duplicate club-news card was removed from the News tab;
+  club news is configured only in Football.
 - **`mode: "overlay"` confirmed working** with Notification Center 0.8.0.
