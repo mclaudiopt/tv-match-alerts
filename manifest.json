@@ -1,11 +1,11 @@
 {
   "id": "match-alerts",
   "apiVersion": 1,
-  "name": "Match alerts",
-  "version": "0.1.1",
-  "description": "Follows a football team on ESPN's public scoreboard and shows goals, kick-off, half-time and full-time as TV banners through Notification Center.",
+  "name": "TV alerts",
+  "version": "0.5.30",
+  "description": "Sport, weather, news and civil-protection alerts on Samsung TVs through Notification Center.",
   "author": "mclaudiopt",
   "permissions": [],
   "main": "index.js",
-  "ui": { "label": "Match alerts" }
+  "ui": { "label": "TV alerts" }
 }

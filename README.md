@@ -1,31 +1,221 @@
-# Match alerts
+# TV alerts
 
-Follows one football team and shows **goals, kick-off, half-time and full-time** as the native Samsung TV banner, on top of whatever is running, through the
-[Notification Center](https://github.com/mclaudiopt/tv-notification-center) Shard (it must be installed, with its companion app). Everything runs on the TV.
+One Vetro Shard for Samsung TVs that sends **sport, weather, news and civil-protection** alerts through
+[Notification Center](https://github.com/mclaudiopt/tv-notification-center) (Shard 0.8.0+ and companion app 0.2.2+ on the same TV).
+Everything runs on the TV; no PC is needed at runtime. The Shard keeps the id `match-alerts` so an existing installation keeps its configuration.
 
-## Providers (chosen in the panel)
+The panel has six tabs: **General**, **Weather**, **News**, **Proteção Civil**, **Football** and **Other sports**. Each tab is split into collapsible sections, and the goal simulation lives inside Football. The tab bar stays at the top while scrolling, **Previous/Next** at the bottom move between tabs, and **Save all** in the header shows whether anything is still unsaved.
+
+## General
+
+| Module | Source | What it sends |
+|---|---|---|
+| **Sport** | ESPN public scoreboard (no key) or API-Football (your key) | Goals, opponent goals, cards, substitutions, disallowed goal, kick-off, half-time, full time; for other sports also score changes. |
+| **Weather** | [Open-Meteo](https://open-meteo.com) (no key) | Temperature, condition, daily min/max and rain chance for the place chosen in the panel, every 5-240 minutes (60 by default). |
+| **News** | Public RSS and Google News (no key) | New headlines from the sources you pick, every 5-240 minutes (30 by default). |
+
+Weather and news respect a **quiet hours 23h-07h** switch (on by default): the data is still fetched, but no banner is sent.
+"Check now", the test buttons and the periodic sport feed are not affected. Seen headlines, match baselines and
+deduped events are saved in `ctx.config.history`, so a restart does not repeat old news or lose a goal that happened
+while the Shard was down.
+
+### Weather provider and schedule
+
+- **Provider**: **Open-Meteo** (worldwide, no key) or **IPMA** (Portuguese official forecast, no key; the place is matched
+  by name or nearest district and weather types are translated to Portuguese). Both work with the custom places.
+- **When to notify**: **Always** (default), **Morning until 10h** (only up to 10:00, showing *today*'s forecast) or
+  **Night after 18h** (only after 18:00, showing *tomorrow*'s forecast). Outside the chosen window the forecast is still
+  fetched and shown in the panel, but no banner is sent. Manual **Test** always shows the banner.
+- **Advance warnings**: with Open-Meteo, enable **Advance warnings** and choose the look-ahead (30/60/120/180 min,
+  default 120 min — enough time to act without flooding the TV). One discreet banner per phenomenon per hour when the
+  hourly forecast crosses the configured thresholds. All four thresholds (rain %, wind km/h, heat °C and storm code),
+  the look-ahead, the on/off switches, quiet hours, sound, style and volume are editable in the panel. Warnings are silent
+  by default, respect quiet hours and are sent only once per hour — the ids are saved
+  in `ctx.config.weatherNotified` so a restart cannot repeat them. IPMA's public feed has no hourly data, so this
+  feature only runs with Open-Meteo.
+
+### Custom place (any town)
+
+Under **Weather**, type a name (for example *Caldas da Rainha*) and press **Find**. Open-Meteo's geocoder
+returns matching places with their coordinates; pick one and press **Add selected**. It is saved on the TV, appears in
+the Place list and is used by the weather banner immediately. Up to 10 custom places; each has a small `x` to remove it.
+Removing the selected place falls back to Lisboa. No coordinates need to be typed by hand.
+
+### Notification style and sound (per tab)
+
+| `mode` | On the TV |
+|---|---|
+| **Banner** | Native Samsung banner over whatever is running, no app switch. |
+| **Full screen** | Full-screen card; the companion app comes to the front. |
+| **Bottom toast** (shown as "Overlay bar" in older screens) | Bar near the bottom, drawn over the running picture by Notification Center 0.8.0+. `level` colours the stripe, `sound` plays immediately, opacity is a Notification Center setting. The panel label is "Bottom toast"; the API value stays `mode: "overlay"`. |
+
+Each section has its own **Sound** switch (football and other sports on by default, weather and news off) and its own
+**Volume** (10-100, default 100), sent to Notification Center as `volume`.
+Sport notifications use the `reward` sound by default (all events and other sports); the module's Sound switch still
+mutes them. Goal banners always name the scorer when the source provides
+one — the name appears in both the title and the message, with the minute. ESPN scorers are read from the scoreboard
+details or the event summary (including `participants` with an explicit `scorer` role); API-Football events carry the
+player directly. A goal detected only by a score change reuses the scorer from the summary if it is already known.
+
+A global rate limit applies to **all** modules: at most **4 banners per minute**, at least 1 s apart. Excess banners wait
+in a small queue (max 12) and are delivered when a slot frees — nothing is dropped. Civil-protection warnings with
+`priority: "high"` bypass the limit. This protects the Notification Center's 5-slot queue from a burst of goals, cards,
+news and weather at the same time.
+
+Every notification is sent with `source: "tv-alerts"`; sport alerts also use `group: false`, so two similar banners in
+the same minute are both shown (they are already deduped by event key). Sport alerts also send `image` with the club's
+ESPN crest (PNG), which Notification Center uses as the icon of the bottom toast; the emoji `icon` remains the fallback
+when there is no crest (e.g. API-Football teams or F1).
+
+## Football
+
+Follow **up to 3 clubs at once**, each with its own competitions. Adding or removing a club, sport pick or news source
+saves immediately — no need to press Guardar. Add a club by picking its league and team; the panel
+pre-ticks that country's league and cup plus the European competitions, and you can tick or untick any of them:
+
+- Portugal: Liga Portugal, Taça de Portugal
+- England: Premier League, Championship, FA Cup, League Cup
+- Spain: La Liga, LaLiga 2, Copa del Rey
+- Italy: Serie A, Serie B, Coppa Italia
+- Germany: Bundesliga, 2. Bundesliga, DFB Pokal
+- France: Ligue 1, Ligue 2, Coupe de France
+- Netherlands: Eredivisie
+- Europe: Champions League, Europa League, Conference League
+
+Each competition is fetched once per cycle and shared by every club that follows it, so two Portuguese clubs mean one
+request, not two. A competition with no matches is skipped for 5 minutes, one with matches for 2 minutes, and one with
+a live match (or a kick-off within 30 min) is polled every 20 s. The scoreboard only ever shows a match of one of your clubs.
+
+**Next match**: **General → Right now** also lists the next fixture of each club ("Sporting CP: Sporting CP × FC Porto ·
+Sat 29 Nov, 20:30"). It is found by scanning the competition scoreboards day by day (ESPN accepts one date per request),
+shared between clubs and cached for an hour. In **Football → Style** you can turn on **Warn before kick-off** and pick
+0/15/30/60 minutes (30 by default): one overlay banner per fixture is sent inside that window. Nothing is shown while
+the match is live. The banner title is exactly **PRE-MATCH** (the teams and local kick-off time are in the message). The
+**Test: kick-off warning** button shows the same banner on demand without using up the real alert. Already-warned
+fixture ids are saved in `ctx.config.nextNotified` (max 20), so a TV restart inside the window does not repeat the banner.
+
+**Per-club alerts**: each club can override the global alert switches — goal for my club, opponent goal, cards,
+substitutions, disallowed goal, kick-off, half-time, full time. The club card shows `inherited (global)` until you tick
+one of them; **Use global** removes the overrides. Other sports keep their own global switches.
+
+**Test with a club**: the test buttons at the bottom of Football act for the club picked in **Test with**. The banner
+takes that club's name, crest and style, so a club with custom alerts or a different competition setup can be checked
+without changing the others. Tests ignore the alert switches on purpose (a switch that is off still sends its test),
+and they never edit the followed clubs or consume the real kick-off warning.
+
+**Club news**: tick it on a club to get headlines about that club (Google News, in the panel language) in the News module.
+
+## Goal simulation (inside Football)
+
+A **Goal simulation** section inside the Football tab has one button per club with its ESPN crest (40×40), name and score
+line. Pressing a button sends a
+real notification through the same `banner()` path used by real goals, with `level` (stripe colour), `mode: "overlay"`,
+`theme: "sport"`, `image` (PNG crest), `duration: 8`, `group: false` and **no sound**. The result is shown in the panel.
+The default list is Sporting (2250, `ok`), Benfica (1929, `alert`), Porto (437, `info`) and Feyenoord (142, `alert`) —
+useful for testing Porto–Feyenoord. The list is editable in the panel (add by name/ESPN id/message/colour, change the
+colour, remove a club) and is stored in `config.sim.clubs`, separate from the clubs the Shard actually follows.
+
+## Proteção Civil (new tab)
+
+A separate module polls three official/complementary sources every 10 min and sends only what is relevant to the chosen district:
+
+| Source | What it gives | How it is shown |
+|---|---|---|
+| **IPMA** — `https://api.ipma.pt/open-data/forecast/warnings/warnings_www.json` | Warning type, district (`idAreaAviso`), level and validity | Red → `alert` + overlay; orange → `warn` + overlay; yellow → discreet banner (off by default). Only the selected district (Leiria by default) and still-valid warnings are used. |
+| **ANEPC** — `https://prociv.gov.pt/pt/avisos-a-populacao/` | Official "Avisos à população" with date and link | Priority notice with a link to the official statement. |
+| **Notícias ao Minuto** — `https://www.noticiasaominuto.com/rss/ultima-hora` | Breaking news | Only when the title contains one of the configured keywords (emergência, estado de alerta, evacuação, corte, sismo, incêndio, inundação, acidente grave, INEM, GNR, PSP, fecho). Off by default. |
+
+The tab lists the active warnings with source, level, validity and official link, and has controls for district, levels,
+sources, keywords, interval, duration, sound and style. The first poll is a baseline; each alert is announced once
+(stable id = source + area + type + start). Everything is sent through Notification Center — the Shard never draws on the TV itself.
+
+An emergency warning from ANEPC always takes precedence over a generic news story; a coastal yellow warning is shown
+as such, not as a general urban emergency. No routine police/fire news is shown without a matching keyword.
+
+## Other sports
+
+Add up to **10 picks**: NBA, MLB, NHL, NFL and Formula 1 (the whole race, with the winner at the end). Several picks of
+the same sport are allowed: team picks are identified by sport + team id, race picks by sport + name, and each keeps its
+own watch and baseline (two NBA teams or two named Grands Prix do not collide). The sport list starts at **Nenhum /
+None** (Add stays disabled until a sport is chosen, and also when the cap is reached). Each pick has its own team where
+the sport has teams. Alerts: start, half/period, end and (optional, off by default) score changes.
+
+## News
+
+Pick **several sources**; each keeps its own history, so a new headline in any of them is announced once:
+
+**Google News (PT)** — `https://news.google.com/rss?hl=pt-PT&gl=PT&ceid=PT:pt-150` — is the default and only source on a fresh install.
+RTP, Público, Observador, Record and Maisfutebol (PT); BBC, CNN, Sky News, New York Times, Wall Street Journal and ESPN
+(EN); Reuters and AP through Google News (they no longer publish a public RSS feed).
+Per-source **headlines per check** is 1-3. The first read of a source is only a baseline.
+
+## Providers
 
 | Provider | Key | Notes |
 |---|---|---|
-| **ESPN** (public scoreboard) | none | Default. Unofficial, can change without notice. Polls every 20 s while the team's match is live, every 2-3 minutes otherwise. Covers leagues and cups on one feed (tested with Liga Portugal and the Taca de Portugal). |
-| **API-Football** | your own key (free plan: 100 requests/day) | **Experimental, not tested without a key.** Spends few requests: checks the team's next fixture, then polls about every 100 s only while the match is live. |
+| **ESPN** (public scoreboard) | none | Default. Unofficial, can change without notice. Polls every 20 s while a match is live, otherwise every 2-3 minutes; the summary (scorer, cards, substitutions) is fetched at most once a minute and kept until after the final whistle, so the last goal is not repeated. |
+| **API-Football** | your own key, free plan 100 requests/day | Experimental, football only, and **out of scope by decision**: ESPN is the provider to use. The code and the **Check key** button remain, but no key was ever tested. One `/fixtures?live=all` covers every club; when nothing is live it asks each club for its next fixture at most once every two hours. |
 
-Other providers (GOAL API, TheSportsDB, football-data.org) are not implemented: add a provider by writing one `match(config, callback)` function in `index.js`.
-
-## What it sends
-
-For the chosen team: **goal** (banner 30 s by default, up to 60), **goal for the opponent**, **goal disallowed**, **kick-off**, **half-time**, **full time**
-(10 s by default). Each type can be switched off in the panel. A match already in progress when the Shard starts only sets a baseline: no banner for the current score.
-"Test" buttons send a sample goal or opponent goal.
+No API-Football key is shipped in this repository. The key is stored in `ctx.config` on the TV only and is never returned to the panel.
 
 ## Network and permissions
 
 - Permissions: none (no `exec`).
-- Outgoing: HTTPS GET to `site.api.espn.com` (ESPN) or `v3.football.api-sports.io` (API-Football, with your key), and one local call, `POST /plugins/notification-center/api/notify` on `127.0.0.1:8099`.
-- Stored in `ctx.config`: provider, team, options and, if you set one, the API-Football key (on the TV only; the panel never shows it back).
-- The match log and state are in memory only.
+- Outgoing HTTPS: `site.api.espn.com`, `v3.football.api-sports.io` (only with a key), `api.open-meteo.com`,
+  `geocoding-api.open-meteo.com` (custom places), `news.google.com` and the selected RSS hosts (CNN is plain HTTP).
+- Local: `POST http://127.0.0.1:8099/plugins/notification-center/api/notify`.
+- Stored in `ctx.config`: modules, clubs with their competitions, other sports, news sources, options and, if set, the
+  API-Football key. Match baselines, seen events and news baselines are persisted in `ctx.config.history` so a restart
+  does not repeat alerts; the log and the live status lines are memory only.
 
-## Install
+## Build, install, test
 
-Install `match-alerts-0.1.1.vplugin` as a file in Vetro (Developer mode), switch it on, open the **Match alerts** tab, pick the team and press "Test: goal".
-Needs Notification Center 0.2.1 or newer (banner mode).
+The Shard is plain ES5 for the TV's Node 4.4. `index.js` keeps the HTTP client, banners, config, watches, polling,
+scheduler and routes; `providers/espn.js`, `providers/af.js` and `news.js` hold the providers and the news logic and
+receive their dependencies by injection. The bundle has 7 files, well below the 20 files / 512 KB limit.
+
+```bat
+node vetro-plugin.cjs check <folder>
+node vetro-plugin.cjs pack <folder> <out-dir>
+```
+Pack from a folder that does **not** contain `dist/`: the packer bundles every subfolder, so `dist/` inside the project
+ends up inside the `.vplugin` (that is how a 88 KB shard became 261 KB). Copy `index.js`, `ui.html`, `manifest.json`,
+`README.md`, `LICENSE`, `news.js` and the `providers/` folder (`espn.js`, `af.js`) into a clean staging folder — the
+modules are loaded with local `require()` and will fail on the TV if they are missing. Point `pack` at `dist` as the
+output. Install with Developer mode on the TV:
+`POST http://<TV-IP>:8099/plugins/install` (bundle as body, header `X-Vetro-Sha256: <sha256>`), then `POST /plugins/match-alerts/enable`.
+Updating an existing installation = disable, install, enable.
+
+Panel buttons show a spinner then a green/red flash. Routes: `/api/state` (full state, panel only), `/api/last`
+(read-only public view: `version`, `at`, `status`, `watches`, `next`, `civ`, `last`, `log`; no config or keys),
+`/api/teams` (POST with `sport`/`league`), `/api/geocode` (POST with `name`), `/api/config`, `/api/test`, `/api/poll`
+and `/api/keycheck`. Note: Vetro's own auth gate still refuses cross-origin browser requests to plugin routes, so
+`/api/last` is readable by scripts on the TV / local LAN (no `Origin` header) but not by a browser mini-site on another
+host.
+
+## Tested / not tested
+
+- Tested on a Samsung Q70C (Tizen 9, Vetro 0.7.0): install/update, preserved configuration, sport/weather/news timers,
+  weather and news banners, and **real ESPN goal and red-card banners with scorer and minute**.
+- 0.4.3 verified with mocked provider answers: two clubs with different competitions, other-sport score change, opponent
+  goal, three news sources at once (RTP, CNN and club news), `source`/`group`/`sound`/`mode` in the notify body, the
+  config route (clubs and sources) and the migration of the old single-team config.
+- 0.4.5 verified with mocked provider answers: geocoding by name, saving a custom place, the place appearing in the
+  panel list and the weather banner using its coordinates, bad coordinates rejected, and removing the selected place
+  falling back to Lisboa.
+- 0.4.6 verified with a focused mocked test (`test_robust.js`): a failing competition no longer hides the other
+  clubs, two clubs in the same match make one summary request, the scoreboard cache follows a 20 s / 2 min / 5 min
+  schedule, and a news poll never sends more than 4 banners (at least 1 s apart), with leftovers kept for the next poll.
+- 0.4.9 verified with `test_next.js`: the next fixture appears in `/api/state`, the day scan stops at the first match
+  and reuses its cache, the pre-kick-off banner is sent only once, and disabling the warning stops it.
+- 0.5.16 verified with mocked tests: Google News (PT) as the only default source, the 3-club cap, and the sound
+  fallback when the Notification Center does not offer `golo` (it was added, withdrawn and re-added in 0.10.0).
+- 0.4.x verified on the TV: tabs filled again (the panel asked for `…/api/api/state`, which 404s; the API base is now
+  taken from `location.pathname` without the trailing `/ui`), football/news/weather tests all sent banners, adding a
+  club through the panel and saving it worked, and the news **Test** button now shows the newest headline even when no
+  new one arrived since the last poll.
+- Not tested on the TV: **API-Football with a real key** — out of scope by decision (no key was available, ESPN is the provider).
+- 0.5.30 verified with mocked tests: two basketball picks of the same sport produce two independent watches, repeated
+  picks are deduped, `/api/last` carries no config or key, and the module split preserves the existing flows. Verified on
+  the TV: version 0.5.30, all six tabs render with zero console errors.
+- **`mode: "overlay"` confirmed working** with Notification Center 0.8.0.

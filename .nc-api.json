@@ -1,0 +1,56 @@
+{
+  "version": "0.14.0",
+  "modes": [
+    "both",
+    "banner",
+    "full",
+    "overlay"
+  ],
+  "levels": [
+    "info",
+    "ok",
+    "warn",
+    "alert"
+  ],
+  "sounds": [
+    "chime",
+    "soft",
+    "reward",
+    "success",
+    "alert",
+    "rotation",
+    "open",
+    "poweron",
+    "golo"
+  ],
+  "fields": [
+    "message",
+    "title",
+    "level",
+    "mode",
+    "duration",
+    "icon",
+    "image",
+    "app",
+    "wallpaper",
+    "theme",
+    "priority",
+    "action",
+    "seconds",
+    "open",
+    "sound",
+    "volume",
+    "group",
+    "source"
+  ],
+  "limits": [
+    "title",
+    "message",
+    "queue",
+    "recent",
+    "durationSeconds",
+    "queueSeconds",
+    "image",
+    "relaunchAfterSeconds"
+  ]
+}
