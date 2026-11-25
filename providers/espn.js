@@ -130,10 +130,32 @@ module.exports = function (env) {
             cb(null, evs);
         });
     }
-    function findMatch(evs, sport, teamId) {
-        var i, j, m;
+    // Compare a race label with an ESPN event name ignoring common words and punctuation.
+    function raceKey(s) {
+        return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ')
+            .replace(/\b(grand|prix|formula|f1|1|race|the|of|20\d\d)\b/g, ' ')
+            .replace(/\s+/g, ' ').trim();
+    }
+    function findMatch(evs, sport, teamId, name) {
+        var i, j, m, want, label, ev = null;
         if (sport === 'f1') {
-            return evs[0] ? { m: espnRaceNorm(evs[0]), raw: evs[0] } : null;
+            // A race pick carries the ESPN event id in `teamId`; older configs had only a label.
+            // Match the id first, then a distinctive name, and only then fall back to the first
+            // race on the board. Without this, every F1 pick followed the same race.
+            if (teamId) {
+                for (i = 0; i < evs.length; i++) {
+                    if (String(evs[i].id) === String(teamId)) { ev = evs[i]; break; }
+                }
+            }
+            want = raceKey(name);
+            if (!ev && want.length >= 3) {
+                for (i = 0; i < evs.length && !ev; i++) {
+                    label = raceKey(evs[i].name || evs[i].shortName || evs[i].shortDisplayName || evs[i].displayName || '');
+                    if (label.length >= 3 && (label === want || label.indexOf(want) > -1 || want.indexOf(label) > -1)) { ev = evs[i]; }
+                }
+            }
+            if (!ev) { ev = evs[0]; }
+            return ev ? { m: espnRaceNorm(ev), raw: ev } : null;
         }
         for (i = 0; i < evs.length; i++) {
             var cs = ((evs[i].competitions || [])[0] || {}).competitors || [];

@@ -397,7 +397,7 @@ details.sec .grid { margin-top:8px; }
             <select id="add-sport"></select>
           </div>
           <div>
-            <label class="f" data-t="team">Team</label>
+            <label class="f" data-t="pickTarget">Team / race</label>
             <select id="add-team2"></select>
           </div>
         </div>
@@ -461,6 +461,7 @@ details.sec .grid { margin-top:8px; }
       testcard:"Test: card", teststart:"Test: kick-off", testend:"Test: full time", testscore:"Test: score",
       testNext:"Test: kick-off warning",
       picks:"Other sports", addPick:"Add", remove:"Remove", noClubs:"No clubs yet: add one below.",
+      pickTarget:"Team / race", noRaces:"No races available.",
       noPicks:"Nothing selected yet.", pickLimit:"Maximum picks: ", saved:"Saved.", noneyet:"Nothing yet.", checked:"Last check: ",
       err:"Error: ", sent:"Test sent.", loading:"Loading...", noTeams:"No team list for this league.",
       keyok:"Key OK - remaining today: ", keynone:"No key saved yet.", keyset:"A key is saved.",
@@ -503,6 +504,7 @@ details.sec .grid { margin-top:8px; }
       testcard:"Teste: cart\u00E3o", teststart:"Teste: in\u00EDcio", testend:"Teste: fim", testscore:"Teste: resultado",
       testNext:"Teste: aviso de jogo",
       picks:"Outros desportos", addPick:"Adicionar", remove:"Remover", noClubs:"Ainda sem clubes: adicione abaixo.",
+      pickTarget:"Equipa / corrida", noRaces:"Sem corridas dispon\u00EDveis.",
       noPicks:"Ainda nada escolhido.", pickLimit:"M\u00E1ximo de picks: ", saved:"Guardado.", noneyet:"Ainda nada.", checked:"\u00DAltima verifica\u00E7\u00E3o: ",
       err:"Erro: ", sent:"Teste enviado.", loading:"A carregar...", noTeams:"Sem lista de equipas para esta liga.",
       keyok:"Chave v\u00E1lida - restantes hoje: ", keynone:"Ainda sem chave.", keyset:"H\u00E1 uma chave guardada.",
@@ -794,11 +796,14 @@ details.sec .grid { margin-top:8px; }
     updatePickButton();
     if (!sp) { el.innerHTML = '<option value="">' + esc(tr("none")) + "</option>"; return; }
     for (i = 0; i < cfg.otherSports.length; i++) { if (cfg.otherSports[i].id === sp) { meta = cfg.otherSports[i]; } }
-    if (!meta || !meta.teams) { el.innerHTML = '<option value="">' + esc(meta ? meta.label : "") + "</option>"; return; }
+    if (!meta) { el.innerHTML = '<option value="">' + esc(tr("none")) + "</option>"; return; }
     el.innerHTML = "<option>" + esc(tr("loading")) + "</option>";
-    api("teams", { sport: sp, league: sp, provider: "espn" })
-      .then(function (d) { fillSel(el, d.teams); })
-      .catch(function (e) { el.innerHTML = "<option>" + esc(tr("err") + e.message) + "</option>"; });
+    // Races have an ESPN event id, so two F1 picks can follow two different races.
+    var route = meta.teams ? "teams" : "races";
+    var args = meta.teams ? { sport: sp, league: sp, provider: "espn" } : {};
+    api(route, args)
+      .then(function (d) { var list = d.teams || d.races || []; fillSel(el, list); })
+      .catch(function () { el.innerHTML = '<option value="">' + esc(tr(meta.teams ? "noTeams" : "noRaces")) + "</option>"; });
   }
 
   // ---- save -----------------------------------------------------------------------------------------------------------------
@@ -1092,14 +1097,17 @@ details.sec .grid { margin-top:8px; }
     if (cfg.maxPicks && picks.length >= cfg.maxPicks) { sayPick(tr("pickLimit") + cfg.maxPicks, "err"); return; }
     for (i = 0; i < cfg.otherSports.length; i++) { if (cfg.otherSports[i].id === sp) { meta = cfg.otherSports[i]; } }
     if (!meta) { return; }
-    if (meta.teams) {
+    if (el.value) {
       team = el.value;
-      if (!team) { sayPick(tr("noTeams"), "err"); return; }
       for (i = 0; i < el.options.length; i++) { if (el.options[i].value === team) { name = el.options[i].text; } }
     } else {
       name = meta.label;
     }
-    for (i = 0; i < picks.length; i++) { if (picks[i].sport === sp && picks[i].teamId === team) { sayPick(tr("err") + "already added", "err"); return; } }
+    // Team picks are unique by team id, race picks by ESPN event id (name as fallback).
+    var key = team || name;
+    for (i = 0; i < picks.length; i++) {
+      if (picks[i].sport === sp && (picks[i].teamId || picks[i].name) === key) { sayPick(tr("err") + "already added", "err"); return; }
+    }
     picks.push({ sport: sp, league: sp, teamId: team, name: name });
     renderPicks();
     act(this, save().then(function () { sayPick(tr("saved") + " (" + name + ")", "ok"); }));

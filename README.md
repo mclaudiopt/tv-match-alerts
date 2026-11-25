@@ -135,10 +135,11 @@ as such, not as a general urban emergency. No routine police/fire news is shown 
 ## Other sports
 
 Add up to **10 picks**: NBA, MLB, NHL, NFL and Formula 1 (the whole race, with the winner at the end). Several picks of
-the same sport are allowed: team picks are identified by sport + team id, race picks by sport + name, and each keeps its
-own watch and baseline (two NBA teams or two named Grands Prix do not collide). The sport list starts at **Nenhum /
-None** (Add stays disabled until a sport is chosen, and also when the cap is reached). Each pick has its own team where
-the sport has teams. Alerts: start, half/period, end and (optional, off by default) score changes.
+the same sport are allowed: team picks are identified by sport + team id, race picks by sport + ESPN event id (older
+configs fall back to the name), and each keeps its own watch and baseline. In Formula 1 the second selector lists the
+races returned by `/api/races`, so two Grands Prix can be followed at once and each announces its own winner. The sport
+list starts at **Nenhum / None** (Add stays disabled until a sport is chosen, and also when the cap is reached). Alerts:
+start, half/period, end and (optional, off by default) score changes.
 
 ## News
 
@@ -172,7 +173,15 @@ No API-Football key is shipped in this repository. The key is stored in `ctx.con
 
 The Shard is plain ES5 for the TV's Node 4.4. `index.js` keeps the HTTP client, banners, config, watches, polling,
 scheduler and routes; `providers/espn.js`, `providers/af.js` and `news.js` hold the providers and the news logic and
-receive their dependencies by injection. The bundle has 7 files, well below the 20 files / 512 KB limit.
+receive their dependencies by injection. The bundle has 8 files, well below the 20 files / 512 KB limit.
+
+The mocked tests live in `tests/` (they require `../index.js`, so they need no TV or network). Run them all with:
+
+```bat
+node tests\run.js
+```
+
+The runner requires each script to exit 0 **and** print `ALL GOOD`, so a test with no assertions cannot pass silently.
 
 ```bat
 node vetro-plugin.cjs check <folder>
@@ -188,7 +197,8 @@ Updating an existing installation = disable, install, enable.
 
 Panel buttons show a spinner then a green/red flash. Routes: `/api/state` (full state, panel only), `/api/last`
 (read-only public view: `version`, `at`, `status`, `watches`, `next`, `civ`, `last`, `log`; no config or keys),
-`/api/teams` (POST with `sport`/`league`), `/api/geocode` (POST with `name`), `/api/config`, `/api/test`, `/api/poll`
+`/api/teams` (POST with `sport`/`league`), `/api/races` (F1 event ids and names for the picker),
+`/api/geocode` (POST with `name`), `/api/config`, `/api/test`, `/api/poll`
 and `/api/keycheck`. Note: Vetro's own auth gate still refuses cross-origin browser requests to plugin routes, so
 `/api/last` is readable by scripts on the TV / local LAN (no `Origin` header) but not by a browser mini-site on another
 host.
@@ -218,4 +228,7 @@ host.
 - 0.5.30 verified with mocked tests: two basketball picks of the same sport produce two independent watches, repeated
   picks are deduped, `/api/last` carries no config or key, and the module split preserves the existing flows. Verified on
   the TV: version 0.5.30, all six tabs render with zero console errors.
+- 0.5.31 verified with mocked tests (`tests/run.js`, 17 scripts): two F1 picks selected by ESPN event id follow two
+  different races and announce two different winners; `/api/races` lists both races; `test_flow.js` now asserts the
+  sport/weather/news flow instead of only printing it.
 - **`mode: "overlay"` confirmed working** with Notification Center 0.8.0.

@@ -229,7 +229,7 @@ module.exports = function (ctx) {
     // Thin local names keep the polling code below readable and make the move behaviour-neutral.
     function espnTeams(s, l, cb) { return espn.espnTeams(s, l, cb); }
     function compEvents(p, cb) { return espn.compEvents(p, cb); }
-    function findMatch(e, s, t) { return espn.findMatch(e, s, t); }
+    function findMatch(e, s, t, n) { return espn.findMatch(e, s, t, n); }
     function withSummary(p, raw, m, cb) { return espn.withSummary(p, raw, m, cb); }
     function ymd(d) { return espn.ymd(d); }
     function dayEvents(p, d, cb) { return espn.dayEvents(p, d, cb); }
@@ -527,14 +527,18 @@ module.exports = function (ctx) {
         var sp = String(x.sport || '');
         if (!OTHER.hasOwnProperty(sp)) { return null; }
         var id = String(x.teamId || '');
-        if (OTHER[sp].teams && !/^\d{1,8}$/.test(id)) { return null; }
+        if (OTHER[sp].teams) {
+            if (!/^\d{1,8}$/.test(id)) { return null; }
+        } else if (id && !/^[A-Za-z0-9_-]{1,20}$/.test(id)) {
+            id = '';   // a non-team pick may carry an ESPN event id; bad values fall back to the name
+        }
         return {
-            sport: sp, league: clean(x.league || sp, 20), teamId: OTHER[sp].teams ? id : '',
+            sport: sp, league: clean(x.league || sp, 20), teamId: id,
             name: clean(x.name || OTHER[sp].label, 40)
         };
     }
-    // Identity of a pick. Two teams of the same sport are different picks; a race (no team id)
-    // is identified by its name so only one whole-race pick per sport can be saved.
+    // Identity of a pick. Two teams of the same sport are different picks; a race is identified by
+    // its ESPN event id (older configs only have a name, which is then used instead).
     function pickKey(p) { return p.sport + '|' + (p.teamId || clean(p.name, 40)); }
     // A custom place is just a name and coordinates, added from the panel by searching Open-Meteo's
     // geocoder. The id comes from that geocoder (`c` + its numeric id), so a name can be typed in
@@ -980,7 +984,7 @@ module.exports = function (ctx) {
                         }
                     } else {
                         hit = espn.cache(sportPath(w));
-                        if (hit) { found = findMatch(hit.events, w.sport, w.teamId); }
+                        if (hit) { found = findMatch(hit.events, w.sport, w.teamId, w.name); }
                     }
                     if (!found) { watchStatus[w.key] = { line: '', state: '', at: Date.now(), error: '' }; continue; }
                     m = found.m; raw = found.raw;
@@ -1541,6 +1545,20 @@ module.exports = function (ctx) {
                         answer();
                     });
                 } else { answer(); }
+                return true;
+            }
+            // Upcoming F1 races for the "Other sports" picker. Each pick stores the ESPN event id
+            // so two races can be followed at once instead of both showing evs[0].
+            if (sub === 'races' && (req.method === 'GET' || req.method === 'POST')) {
+                compEvents('racing/f1', function (err, evs) {
+                    if (err) { return sendJson(res, 502, { error: String(err) }); }
+                    var races = [], i, e;
+                    for (i = 0; i < (evs || []).length && races.length < 40; i++) {
+                        e = evs[i];
+                        races.push({ id: String(e.id || ''), name: clean(e.name || e.shortName || e.shortDisplayName || ('Race ' + e.id), 80), date: String(e.date || '') });
+                    }
+                    sendJson(res, 200, { races: races });
+                });
                 return true;
             }
             // Search a place by name: the user types "Caldas da Rainha" and the panel gets the

@@ -1,6 +1,6 @@
 # TV alerts — bugs, correções e melhorias
 
-Estado: TV e código em **0.5.30**; Notification Center **0.14.0**. Por decisão do Marcelo, **não implementar** a chave API-Football (P1-5) nem a deduplicação de notícias (B5). ESPN é o fornecedor a usar. As três melhorias pedidas na última sessão estão feitas e fechadas abaixo; não há outras ideias em aberto.
+Estado: código em **0.5.31** (TV em 0.5.30 até nova instalação); Notification Center **0.14.0**. Por decisão do Marcelo, **não implementar** a chave API-Football (P1-5) nem a deduplicação de notícias (B5). ESPN é o fornecedor a usar. As três melhorias pedidas na última sessão estão feitas e fechadas abaixo; não há outras ideias em aberto.
 
 ---
 
@@ -19,7 +19,7 @@ Antes, dois picks com o mesmo desporto colidiam: a rota de config dedupava por `
 - `providers/espn.js`: scoreboard, teams, events/scorer, resumo, next-fixture (`compCache`, `sumCache`, `dayCache`, `nextHint`). Recebe por injecção `getJson`, `clean`, `addLog`, `fmtKick` e `OTHER`; não faz notificações nem HTTP próprio.
 - `providers/af.js`: API-Football opcional; a chave vem de `getKey()` injetado e nunca fica no módulo.
 - `news.js`: RSS + Google News, baselines por feed, orçamento global de 4 manchetes/poll e espaçamento de 1 s. Recebe `getUrl`, `banner`, `schedule`, `status`, etc.
-- `index.js` mantém o cliente HTTP local, `banner()`/fila, config, watches, análise desportiva, tempo, proteção civil, rotas e scheduler. Tudo em ES5/ASCII, `require()` local permitido pelo Vetro, 5 ficheiros no bundle (dentro de 20 / 512 KB). Caches e persistência (`nextHints`, `history.newsSeen`) passaram a usar os accessors dos módulos.
+- `index.js` mantém o cliente HTTP local, `banner()`/fila, config, watches, análise desportiva, tempo, proteção civil, rotas e scheduler. Tudo em ES5/ASCII, `require()` local permitido pelo Vetro, 8 ficheiros no bundle (dentro de 20 / 512 KB). Caches e persistência (`nextHints`, `history.newsSeen`) passaram a usar os accessors dos módulos.
 
 ---
 
@@ -43,6 +43,7 @@ Antes, dois picks com o mesmo desporto colidiam: a rota de config dedupava por `
 | 0.5.28 | B10 teste por clube; simulação de golos no separador Futebol. |
 | 0.5.29 | Uniformização do painel: `.stack` de cartões largos com secções `<details>`; Estilo agrupado em cada separador. |
 | 0.5.30 | Vários picks do mesmo desporto; `/api/last` público; `index.js` dividido em `providers/espn.js`, `providers/af.js`, `news.js`. |
+| 0.5.31 | Dois picks F1 distinctos seguem corridas diferentes (id do evento ESPN via `/api/races`); testes versionados em `tests/` com runner único; `test_flow.js` com assertions. |
 | várias | Vários clubes e competições, várias fontes, vários desportos, scoreboard só do clube escolhido, overlay, migração de configs antigas. |
 
 ---
