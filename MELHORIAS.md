@@ -1,6 +1,6 @@
 # TV alerts — bugs, correções e melhorias
 
-Estado: código em **0.5.31** (TV em 0.5.30 até nova instalação); Notification Center **0.14.0**. Por decisão do Marcelo, **não implementar** a chave API-Football (P1-5) nem a deduplicação de notícias (B5). ESPN é o fornecedor a usar. As três melhorias pedidas na última sessão estão feitas e fechadas abaixo; não há outras ideias em aberto.
+Estado: código e TV em **0.5.32**; Notification Center **0.14.0**. Por decisão do Marcelo, **não implementar** a chave API-Football (P1-5) nem a deduplicação de notícias (B5). ESPN é o fornecedor a usar. As três melhorias pedidas na última sessão estão feitas e fechadas abaixo; não há outras ideias em aberto.
 
 ---
 
@@ -44,6 +44,7 @@ Antes, dois picks com o mesmo desporto colidiam: a rota de config dedupava por `
 | 0.5.29 | Uniformização do painel: `.stack` de cartões largos com secções `<details>`; Estilo agrupado em cada separador. |
 | 0.5.30 | Vários picks do mesmo desporto; `/api/last` público; `index.js` dividido em `providers/espn.js`, `providers/af.js`, `news.js`. |
 | 0.5.31 | Dois picks F1 distinctos seguem corridas diferentes (id do evento ESPN via `/api/races`); testes versionados em `tests/` com runner único; `test_flow.js` com assertions. |
+| 0.5.32 | Higiene: fontes ASCII (`\u`/entidades), `dist/`/`build/` ignorados pelo git, `build.ps1` corre check-nc antes de pack/install e usa packer vendido em `tools/vetro/`. |
 | várias | Vários clubes e competições, várias fontes, vários desportos, scoreboard só do clube escolhido, overlay, migração de configs antigas. |
 
 ---

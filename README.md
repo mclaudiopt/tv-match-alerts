@@ -171,9 +171,10 @@ No API-Football key is shipped in this repository. The key is stored in `ctx.con
 
 ## Build, install, test
 
-The Shard is plain ES5 for the TV's Node 4.4. `index.js` keeps the HTTP client, banners, config, watches, polling,
-scheduler and routes; `providers/espn.js`, `providers/af.js` and `news.js` hold the providers and the news logic and
-receive their dependencies by injection. The bundle has 8 files, well below the 20 files / 512 KB limit.
+The Shard is plain ES5 for the TV's Node 4.4. All shipped sources are ASCII (unicode is written as `\u` escapes or HTML
+entities). `index.js` keeps the HTTP client, banners, config, watches, polling, scheduler and routes; `providers/espn.js`,
+`providers/af.js` and `news.js` hold the providers and the news logic and receive their dependencies by injection. The
+bundle has 8 files, well below the 20 files / 512 KB limit.
 
 The mocked tests live in `tests/` (they require `../index.js`, so they need no TV or network). Run them all with:
 
@@ -183,17 +184,22 @@ node tests\run.js
 
 The runner requires each script to exit 0 **and** print `ALL GOOD`, so a test with no assertions cannot pass silently.
 
+Use the script — it runs the Notification Center drift check **first**, builds a clean staging folder, runs
+`vetro check` and `vetro pack`, prints the sha256, and optionally installs and verifies on the TV:
+
 ```bat
-node vetro-plugin.cjs check <folder>
-node vetro-plugin.cjs pack <folder> <out-dir>
+pwsh -File build.ps1
+pwsh -File build.ps1 -Install
+pwsh -File build.ps1 -Install -TvIp 192.168.1.7
 ```
-Pack from a folder that does **not** contain `dist/`: the packer bundles every subfolder, so `dist/` inside the project
-ends up inside the `.vplugin` (that is how a 88 KB shard became 261 KB). Copy `index.js`, `ui.html`, `manifest.json`,
-`README.md`, `LICENSE`, `news.js` and the `providers/` folder (`espn.js`, `af.js`) into a clean staging folder — the
-modules are loaded with local `require()` and will fail on the TV if they are missing. Point `pack` at `dist` as the
-output. Install with Developer mode on the TV:
-`POST http://<TV-IP>:8099/plugins/install` (bundle as body, header `X-Vetro-Sha256: <sha256>`), then `POST /plugins/match-alerts/enable`.
-Updating an existing installation = disable, install, enable.
+
+The Vetro packer is vendored in `tools/vetro/` (MIT, see `tools/vetro/LICENSE`), so no clone in `%TEMP%` is needed.
+Staging is `build/stage`; both `build/` and `dist/` are gitignored. Pack from a folder that does **not** contain
+`dist/`: the packer bundles every subfolder, so `dist/` inside the project ends up inside the `.vplugin` (that is how a
+88 KB shard became 261 KB). The script copies `index.js`, `ui.html`, `manifest.json`, `README.md`, `LICENSE`, `news.js`
+and the `providers/` folder (`espn.js`, `af.js`) — the modules are loaded with local `require()` and will fail on the TV
+if missing. Installing manually is `POST http://<TV-IP>:8099/plugins/install` (bundle as body, header
+`X-Vetro-Sha256: <sha256>`), then `POST /plugins/match-alerts/enable`; updating = disable, install, enable.
 
 Panel buttons show a spinner then a green/red flash. Routes: `/api/state` (full state, panel only), `/api/last`
 (read-only public view: `version`, `at`, `status`, `watches`, `next`, `civ`, `last`, `log`; no config or keys),
@@ -231,4 +237,6 @@ host.
 - 0.5.31 verified with mocked tests (`tests/run.js`, 17 scripts): two F1 picks selected by ESPN event id follow two
   different races and announce two different winners; `/api/races` lists both races; `test_flow.js` now asserts the
   sport/weather/news flow instead of only printing it.
+- 0.5.32: hygiene only — shipped sources are pure ASCII, `dist/`/`build/` are gitignored, and `build.ps1` runs the NC
+  check before pack/install (verified with `pwsh -File build.ps1 -Install`).
 - **`mode: "overlay"` confirmed working** with Notification Center 0.8.0.

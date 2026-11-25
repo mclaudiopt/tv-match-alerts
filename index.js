@@ -1112,7 +1112,7 @@ module.exports = function (ctx) {
                 if (end && end < Date.now() - 3600000) { continue; }
                 out.push({
                     id: '', source: 'IPMA', area: w.idAreaAviso, type: String(w.awarenessTypeName || ''),
-                    level: lv, title: civLevelName(lv) + ' · ' + String(w.awarenessTypeName || ''),
+                    level: lv, title: civLevelName(lv) + ' \u00B7 ' + String(w.awarenessTypeName || ''),
                     message: String(w.text || ''), startsAt: w.startTime || '', endsAt: w.endTime || '',
                     url: 'https://www.ipma.pt/'
                 });
