@@ -538,7 +538,7 @@ details.sec .grid { margin-top:8px; }
       e.className = "msg ok";
     }
   }
-  var clubs = [], picks = [], feeds = [], geoResults = [], simClubs = [];
+  var clubs = [], picks = [], feeds = [], geoResults = [], simClubs = [], raceListError = false;
   var CLUB_ALERTS = [
     ["goal","a_goal"], ["against","a_against"], ["card","a_card"], ["sub","a_sub"],
     ["varNo","a_var"], ["start","a_start"], ["half","a_half"], ["end","a_end"]
@@ -649,8 +649,12 @@ details.sec .grid { margin-top:8px; }
     if (!sel.value) { sel.value = clubs[0].id; }
   }
   function updatePickButton() {
-    var sp = $("add-sport").value;
-    $("add-pick").disabled = !sp || !!(cfg.maxPicks && picks.length >= cfg.maxPicks);
+    var sp = $("add-sport").value, i, meta = null;
+    for (i = 0; i < (cfg ? cfg.otherSports.length : 0); i++) { if (cfg.otherSports[i].id === sp) { meta = cfg.otherSports[i]; } }
+    // A race pick needs an ESPN event id: never fall back to the bare sport label, because every
+    // such pick would then follow the same race.
+    $("add-pick").disabled = !sp || !meta || !!(cfg.maxPicks && picks.length >= cfg.maxPicks) ||
+      (!meta.teams && raceListError);
   }
   function renderPicks() {
     var box = $("picks"), i, k, html = "", label;
@@ -802,8 +806,15 @@ details.sec .grid { margin-top:8px; }
     var route = meta.teams ? "teams" : "races";
     var args = meta.teams ? { sport: sp, league: sp, provider: "espn" } : {};
     api(route, args)
-      .then(function (d) { var list = d.teams || d.races || []; fillSel(el, list); })
-      .catch(function () { el.innerHTML = '<option value="">' + esc(tr(meta.teams ? "noTeams" : "noRaces")) + "</option>"; });
+      .then(function (d) {
+        var list = d.teams || d.races || [];
+        raceListError = !meta.teams && !list.length;
+        fillSel(el, list);
+      })
+      .catch(function () {
+        raceListError = !meta.teams;
+        el.innerHTML = '<option value="">' + esc(tr(meta.teams ? "noTeams" : "noRaces")) + "</option>";
+      });
   }
 
   // ---- save -----------------------------------------------------------------------------------------------------------------
@@ -1097,14 +1108,13 @@ details.sec .grid { margin-top:8px; }
     if (cfg.maxPicks && picks.length >= cfg.maxPicks) { sayPick(tr("pickLimit") + cfg.maxPicks, "err"); return; }
     for (i = 0; i < cfg.otherSports.length; i++) { if (cfg.otherSports[i].id === sp) { meta = cfg.otherSports[i]; } }
     if (!meta) { return; }
-    if (el.value) {
-      team = el.value;
-      for (i = 0; i < el.options.length; i++) { if (el.options[i].value === team) { name = el.options[i].text; } }
-    } else {
-      name = meta.label;
-    }
-    // Team picks are unique by team id, race picks by ESPN event id (name as fallback).
-    var key = team || name;
+    if (!meta.teams && raceListError) { sayPick(tr("noRaces"), "err"); return; }
+    if (!el.value) { sayPick(tr(meta.teams ? "noTeams" : "noRaces"), "err"); return; }
+    team = el.value;
+    for (i = 0; i < el.options.length; i++) { if (el.options[i].value === team) { name = el.options[i].text; } }
+    if (!name) { name = team; }
+    // Team picks are unique by team id, race picks by ESPN event id (name only for old configs).
+    var key = team;
     for (i = 0; i < picks.length; i++) {
       if (picks[i].sport === sp && (picks[i].teamId || picks[i].name) === key) { sayPick(tr("err") + "already added", "err"); return; }
     }

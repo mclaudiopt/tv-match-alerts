@@ -44,11 +44,19 @@ Write-Host "== Vetro pack"
 if ($LASTEXITCODE -ne 0) { Fail "Vetro pack failed." }
 
 $version = (Get-Content (Join-Path $root "manifest.json") -Raw | ConvertFrom-Json).version
+foreach ($doc in @("AGENTS.md", "README.md", "MELHORIAS.md", "package.json")) {
+    $text = Get-Content (Join-Path $root $doc) -Raw
+    if ($text.IndexOf($version) -lt 0) { Fail "$doc does not mention version $version; update the docs before packing." }
+}
 $bundle = Join-Path $dist "match-alerts-$version.vplugin"
 if (-not (Test-Path $bundle)) { Fail "Bundle not found: $bundle" }
 $sha = (Get-FileHash $bundle -Algorithm SHA256).Hash.ToLowerInvariant()
 Write-Host "Bundle: $bundle"
 Write-Host "sha256: $sha"
+
+# dist/ is gitignored, but old bundles still pile up on disk. Keep the current one and its predecessor.
+$old = Get-ChildItem $dist -Filter "match-alerts-*.vplugin" | Sort-Object LastWriteTime -Descending | Select-Object -Skip 2
+foreach ($f in $old) { Remove-Item $f.FullName -Force; Write-Host "Removed old bundle: $($f.Name)" }
 
 if ($Install) {
     $base = "http://${TvIp}:8099"

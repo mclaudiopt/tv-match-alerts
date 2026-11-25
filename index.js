@@ -229,6 +229,20 @@ module.exports = function (ctx) {
     // Thin local names keep the polling code below readable and make the move behaviour-neutral.
     function espnTeams(s, l, cb) { return espn.espnTeams(s, l, cb); }
     function compEvents(p, cb) { return espn.compEvents(p, cb); }
+    function espnRaces(cb) { return espn.seasonRaces('racing/f1', cb); }
+    function raceRows(evs) {
+        var out = [], i, e, st;
+        for (i = 0; i < (evs || []).length && out.length < 40; i++) {
+            e = evs[i]; st = (e.status && e.status.type) || {};
+            out.push({
+                id: String(e.id || ''),
+                name: clean(e.name || e.shortName || e.shortDisplayName || ('Race ' + e.id), 80),
+                date: String(e.date || ''), state: String(st.state || ''), past: st.state === 'post'
+            });
+        }
+        out.sort(function (a, b) { return a.date < b.date ? -1 : (a.date > b.date ? 1 : 0); });
+        return out;
+    }
     function findMatch(e, s, t, n) { return espn.findMatch(e, s, t, n); }
     function withSummary(p, raw, m, cb) { return espn.withSummary(p, raw, m, cb); }
     function ymd(d) { return espn.ymd(d); }
@@ -368,21 +382,28 @@ module.exports = function (ctx) {
         });
     }
     // Global rate limit across every module. The NC queue has only 5 slots and plays one sound per
-    // 0.8 s, so flooding it hides important alerts. Nothing is dropped: excess banners wait in a
-    // small queue and are delivered when a slot frees. Civil-protection `high` priority bypasses it.
+    // 0.8 s, so flooding it hides important alerts. Excess banners wait in a small queue, but the
+    // queue is bounded: once it is full the oldest (stale) banner is dropped and logged. Civil
+    // protection `high` priority bypasses the limit and is never queued.
     var BANNER_MAX_MIN = 4, BANNER_GAP = 1000, BANNER_QUEUE_MAX = 12;
     var sendTimes = [], bannerQueue = [], bannerTimer = null;
     function bannerSend(text) {
+        var failed = false;
+        function fail(e) {
+            if (failed) { return; }
+            failed = true;
+            addLog('notify', 'error', String(e && e.message || e || 'notify failed'));
+        }
         try {
             var rq = http.request({
                 host: '127.0.0.1', port: 8099, path: NOTIFY, method: 'POST', timeout: 5000,
                 headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(text) }
             }, function (r) { r.resume(); });
-            rq.on('error', function () { /* Notification Center not installed or Vetro busy */ });
-            rq.on('timeout', function () { rq.destroy(); });
+            rq.on('error', fail);
+            rq.on('timeout', function () { fail('Notification Center timeout'); rq.destroy(); });
             rq.write(text);
             rq.end();
-        } catch (e) { /* ignore */ }
+        } catch (e) { fail(e); }
     }
     function drainBannerQueue() {
         bannerTimer = null;
@@ -431,10 +452,11 @@ module.exports = function (ctx) {
             drainBannerQueue();
             return;
         }
-        bannerQueue.push(item);
-        if (bannerQueue.length > BANNER_QUEUE_MAX) {
-            addLog('sport', 'queue', 'banner queue above ' + BANNER_QUEUE_MAX + ': nothing is dropped');
+        while (bannerQueue.length >= BANNER_QUEUE_MAX) {
+            bannerQueue.shift();
+            addLog('sport', 'queue', 'banner queue full (' + BANNER_QUEUE_MAX + '): oldest banner dropped');
         }
+        bannerQueue.push(item);
         drainBannerQueue();
     }
     // Default sound for every sport notification: `reward` (present in all NC versions).
@@ -1508,7 +1530,8 @@ module.exports = function (ctx) {
             sub = String(sub || '').split('?')[0].replace(/^\/+|\/+$/g, '');
             if (sub === 'ui' && req.method === 'GET') { sendFile(res, 'ui.html', 'text/html; charset=utf-8'); return true; }
             if (sub === 'state' && req.method === 'GET') {
-                sendJson(res, 200, { config: publicCfg(), status: status, watches: watchStatus, next: nextList(), civ: civAlerts, log: log });
+                sendJson(res, 200, { config: publicCfg(), status: status, watches: watchStatus, next: nextList(), civ: civAlerts,
+                    notify: { queued: bannerQueue.length, sentMinute: sendTimes.length }, log: log });
                 return true;
             }
             // Public endpoint for widgets / a mini-site. Unlike /state it carries no config,
@@ -1517,7 +1540,8 @@ module.exports = function (ctx) {
                 sendPublicJson(res, 200, {
                     version: VERSION, at: Date.now(), historyAt: historyAt,
                     status: status, watches: watchStatus, next: nextList(),
-                    civ: civAlerts, last: publicLast(), log: log.slice(0, 10)
+                    civ: civAlerts, last: publicLast(),
+                    notify: { queued: bannerQueue.length, sentMinute: sendTimes.length }, log: log.slice(0, 10)
                 });
                 return true;
             }
@@ -1550,14 +1574,15 @@ module.exports = function (ctx) {
             // Upcoming F1 races for the "Other sports" picker. Each pick stores the ESPN event id
             // so two races can be followed at once instead of both showing evs[0].
             if (sub === 'races' && (req.method === 'GET' || req.method === 'POST')) {
-                compEvents('racing/f1', function (err, evs) {
-                    if (err) { return sendJson(res, 502, { error: String(err) }); }
-                    var races = [], i, e;
-                    for (i = 0; i < (evs || []).length && races.length < 40; i++) {
-                        e = evs[i];
-                        races.push({ id: String(e.id || ''), name: clean(e.name || e.shortName || e.shortDisplayName || ('Race ' + e.id), 80), date: String(e.date || '') });
-                    }
-                    sendJson(res, 200, { races: races });
+                var fallback = function () {
+                    compEvents('racing/f1', function (err2, cur) {
+                        if (err2) { return sendJson(res, 502, { error: String(err2) }); }
+                        sendJson(res, 200, { races: raceRows(cur), season: false });
+                    });
+                };
+                espnRaces(function (err, evs) {
+                    if (err || !evs || !evs.length) { return fallback(); }
+                    sendJson(res, 200, { races: raceRows(evs), season: true });
                 });
                 return true;
             }

@@ -9,6 +9,7 @@ module.exports = function (env) {
     var sumCache = {};             // event id -> { at, events } (summary: scorer, cards, subs)
     var sumPending = {}, sumWait = {}; // one in-flight summary per match, shared by all my clubs in it
     var dayCache = {};             // "soccer/<comp>|YYYYMMDD" -> { at, events }, shared by every club
+    var seasonCache = {};          // "racing/f1|2026" -> { at, nextAt, events } for the season picker
     var nextHint = {};             // watch key -> { date: YYYYMMDD } of the last found fixture
 
     function espnSide(c) {
@@ -127,6 +128,19 @@ module.exports = function (env) {
             }
             var ttl = (live || soon) ? 20000 : (evs.length ? 120000 : 300000);
             compCache[sportPath] = { at: Date.now(), events: evs, nextAt: Date.now() + ttl };
+            cb(null, evs);
+        });
+    }
+    // The plain scoreboard only carries the current race. ESPN accepts one ?dates=YYYY per request
+    // and answers with every event of that season, which is what the F1 picker needs.
+    function seasonRaces(sportPath, cb) {
+        var year = String(new Date().getFullYear()), key = sportPath + '|' + year, hit = seasonCache[key];
+        if (hit && Date.now() < hit.nextAt) { return cb(null, hit.events); }
+        getJson('site.api.espn.com', '/apis/site/v2/sports/' + sportPath + '/scoreboard?dates=' + year, {}, function (err, data) {
+            if (err) { return cb(err); }
+            var evs = (data && data.events) || [];
+            if (!evs.length) { return cb('empty season'); }
+            seasonCache[key] = { at: Date.now(), events: evs, nextAt: Date.now() + 21600000 }; // 6 h
             cb(null, evs);
         });
     }
@@ -287,7 +301,7 @@ module.exports = function (env) {
     return {
         espnSide: espnSide, espnEvent: espnEvent, espnEvents: espnEvents,
         espnNorm: espnNorm, espnRaceNorm: espnRaceNorm, espnTeams: espnTeams,
-        compEvents: compEvents, findMatch: findMatch, withSummary: withSummary,
+        compEvents: compEvents, seasonRaces: seasonRaces, findMatch: findMatch, withSummary: withSummary,
         ymd: ymd, dayEvents: dayEvents, scanNext: scanNext,
         sportPath: sportPath, logoFor: logoFor,
         cache: function (path) { return compCache[path]; },

@@ -58,9 +58,11 @@ details or the event summary (including `participants` with an explicit `scorer`
 player directly. A goal detected only by a score change reuses the scorer from the summary if it is already known.
 
 A global rate limit applies to **all** modules: at most **4 banners per minute**, at least 1 s apart. Excess banners wait
-in a small queue (max 12) and are delivered when a slot frees — nothing is dropped. Civil-protection warnings with
-`priority: "high"` bypass the limit. This protects the Notification Center's 5-slot queue from a burst of goals, cards,
-news and weather at the same time.
+in a small queue (max 12) and are delivered when a slot frees. The queue is bounded: once full, the oldest (stale) banner
+is dropped and logged, so a burst cannot grow memory without limit. Civil-protection warnings with `priority: "high"`
+bypass the limit. `/api/state` and `/api/last` report `notify.queued` and `notify.sentMinute`, and a failed POST to the
+Notification Center is written to the log. This protects the Notification Center's 5-slot queue from a burst of goals,
+cards, news and weather at the same time.
 
 Every notification is sent with `source: "tv-alerts"`; sport alerts also use `group: false`, so two similar banners in
 the same minute are both shown (they are already deduped by event key). Sport alerts also send `image` with the club's
@@ -137,7 +139,9 @@ as such, not as a general urban emergency. No routine police/fire news is shown 
 Add up to **10 picks**: NBA, MLB, NHL, NFL and Formula 1 (the whole race, with the winner at the end). Several picks of
 the same sport are allowed: team picks are identified by sport + team id, race picks by sport + ESPN event id (older
 configs fall back to the name), and each keeps its own watch and baseline. In Formula 1 the second selector lists the
-races returned by `/api/races`, so two Grands Prix can be followed at once and each announces its own winner. The sport
+**whole season** from `/api/races` (ESPN `?dates=YYYY`, 25 races in 2026, cached 6 h and sorted by date), so two Grands
+Prix can be followed at once and each announces its own winner. If the season list cannot be loaded, **Add** is disabled
+rather than storing a pick without an event id. The sport
 list starts at **Nenhum / None** (Add stays disabled until a sport is chosen, and also when the cap is reached). Alerts:
 start, half/period, end and (optional, off by default) score changes.
 
@@ -180,9 +184,11 @@ The mocked tests live in `tests/` (they require `../index.js`, so they need no T
 
 ```bat
 node tests\run.js
+npm test
 ```
 
 The runner requires each script to exit 0 **and** print `ALL GOOD`, so a test with no assertions cannot pass silently.
+`.github/workflows/test.yml` runs the same command on every push and pull request (Node 20, no TV needed).
 
 Use the script — it runs the Notification Center drift check **first**, builds a clean staging folder, runs
 `vetro check` and `vetro pack`, prints the sha256, and optionally installs and verifies on the TV:
@@ -194,7 +200,9 @@ pwsh -File build.ps1 -Install -TvIp 192.168.1.7
 ```
 
 The Vetro packer is vendored in `tools/vetro/` (MIT, see `tools/vetro/LICENSE`), so no clone in `%TEMP%` is needed.
-Staging is `build/stage`; both `build/` and `dist/` are gitignored. Pack from a folder that does **not** contain
+The script also refuses to pack when the docs do not mention the manifest version, and prunes old bundles after a
+successful pack (keeps the current one and its predecessor). Staging is `build/stage`; both `build/` and `dist/` are
+gitignored. Pack from a folder that does **not** contain
 `dist/`: the packer bundles every subfolder, so `dist/` inside the project ends up inside the `.vplugin` (that is how a
 88 KB shard became 261 KB). The script copies `index.js`, `ui.html`, `manifest.json`, `README.md`, `LICENSE`, `news.js`
 and the `providers/` folder (`espn.js`, `af.js`) — the modules are loaded with local `require()` and will fail on the TV
@@ -202,8 +210,9 @@ if missing. Installing manually is `POST http://<TV-IP>:8099/plugins/install` (b
 `X-Vetro-Sha256: <sha256>`), then `POST /plugins/match-alerts/enable`; updating = disable, install, enable.
 
 Panel buttons show a spinner then a green/red flash. Routes: `/api/state` (full state, panel only), `/api/last`
-(read-only public view: `version`, `at`, `status`, `watches`, `next`, `civ`, `last`, `log`; no config or keys),
-`/api/teams` (POST with `sport`/`league`), `/api/races` (F1 event ids and names for the picker),
+(read-only public view: `version`, `at`, `status`, `watches`, `next`, `civ`, `last`, `notify`, `log`; no config or keys),
+`/api/teams` (POST with `sport`/`league`), `/api/races` (whole F1 season for the picker, with a `season` flag and a
+current-scoreboard fallback),
 `/api/geocode` (POST with `name`), `/api/config`, `/api/test`, `/api/poll`
 and `/api/keycheck`. Note: Vetro's own auth gate still refuses cross-origin browser requests to plugin routes, so
 `/api/last` is readable by scripts on the TV / local LAN (no `Origin` header) but not by a browser mini-site on another
@@ -239,4 +248,7 @@ host.
   sport/weather/news flow instead of only printing it.
 - 0.5.32: hygiene only — shipped sources are pure ASCII, `dist/`/`build/` are gitignored, and `build.ps1` runs the NC
   check before pack/install (verified with `pwsh -File build.ps1 -Install`).
+- 0.5.33 verified with mocked tests (`tests/run.js`, 19 scripts): `/api/races` lists the whole F1 season sorted by date
+  and falls back to the current scoreboard; the banner queue is bounded and drops are logged; failed notify POSTs are
+  logged. The race picker disables **Add** when no race list is available. CI runs the same tests on every push.
 - **`mode: "overlay"` confirmed working** with Notification Center 0.8.0.
