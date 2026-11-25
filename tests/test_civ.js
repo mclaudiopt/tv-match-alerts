@@ -2,11 +2,11 @@
 // Focused test for the Proteção Civil tab: IPMA district filter, ANEPC notices, keyword-filtered
 // breaking news, baseline/dedupe, level switches and NC notify fields.
 var https = require('https'), http = require('http');
-var sent = [], stage = 0;
+var sent = [], stage = 0, escalate = false;
 function emitter() {
   var h = {};
   return { on: function (e, f) { (h[e] = h[e] || []).push(f); return this; }, emit: function (e, a) { (h[e] || []).forEach(function (f) { f(a); }); },
-    setEncoding: function () {}, resume: function () {}, destroy: function () {} };
+    setEncoding: function () {}, resume: function () {}, destroy: function () {}, statusCode: 200 };
 }
 function respond(cb, code, text) {
   var r = emitter(); r.statusCode = code;
@@ -27,7 +27,7 @@ function when(days, hour) {
 function serve(opt, cb) {
   if (/api\.ipma\.pt/.test(opt.host)) {
     var list = [
-      warning('LRA', 'Agitação Marítima', 'orange', when(-1, 21), when(1, 12)),
+      warning('LRA', 'Agitação Marítima', escalate ? 'red' : 'orange', when(-1, 21), when(1, 12)),
       warning('LSB', 'Chuva', 'red', when(-1, 21), when(1, 12))
     ];
     if (stage > 0) { list.push(warning('LRA', 'Chuva Forte', 'red', when(0, 8), when(1, 18))); }
@@ -98,6 +98,12 @@ function assert(ok, msg) { if (!ok) { throw new Error('FAILED: ' + msg); } conso
   assert(st.civ.some(function (a) { return a.source === 'ANEPC' && /Aviso 22/.test(a.title); }), 'ANEPC notice is parsed');
   assert(st.civ.some(function (a) { return /evacuação/.test(a.title); }), 'breaking news with a keyword is included');
   assert(sent.length === 0, 'the first poll is only a baseline');
+
+  // An orange warning upgraded to red is a new alert and must be announced.
+  escalate = true; sent = [];
+  await post('poll', { module: 'civ' }); await wait(400);
+  assert(sent.length >= 1, 'an escalation from orange to red is announced');
+  escalate = false;
 
   stage = 1; sent = [];
   await post('poll', { module: 'civ' }); await wait(400);

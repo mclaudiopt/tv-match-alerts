@@ -61,8 +61,9 @@ A global rate limit applies to **all** modules: at most **4 banners per minute**
 in a small queue (max 12) and are delivered when a slot frees. The queue is bounded: once full, the oldest (stale) banner
 is dropped and logged, so a burst cannot grow memory without limit. Civil-protection warnings with `priority: "high"`
 bypass the limit. `/api/state` and `/api/last` report `notify.queued` and `notify.sentMinute`, and a failed POST to the
-Notification Center is written to the log. This protects the Notification Center's 5-slot queue from a burst of goals,
-cards, news and weather at the same time.
+Notification Center (transport error or HTTP 4xx/5xx) is written to the log. The drain timer is cancelled correctly and
+no banner is delivered after the Shard stops. This protects the Notification Center's 5-slot queue from a burst of
+goals, cards, news and weather at the same time.
 
 Every notification is sent with `source: "tv-alerts"`; sport alerts also use `group: false`, so two similar banners in
 the same minute are both shown (they are already deduped by event key). Sport alerts also send `image` with the club's
@@ -143,7 +144,8 @@ the same sport are allowed: team picks are identified by sport + team id, race p
 configs fall back to the name), and each keeps its own watch and baseline. In Formula 1 the second selector lists the
 **whole season** from `/api/races` (ESPN `?dates=YYYY`, 25 races in 2026, cached 6 h and sorted by date), so two Grands
 Prix can be followed at once and each announces its own winner. If the season list cannot be loaded, **Add** is disabled
-rather than storing a pick without an event id. The sport
+rather than storing a pick without an event id, and an old pick whose race no longer exists is left empty instead of
+following (and announcing) the first race on the board. The sport
 list starts at **Nenhum / None** (Add stays disabled until a sport is chosen, and also when the cap is reached). Alerts:
 start, half/period, end and (optional, off by default) score changes.
 
@@ -262,4 +264,8 @@ host.
 - 0.5.36: the General tab is now **SETUP**, and its four module switches show/hide the matching tabs (Sport covers
   Football + Other sports, Civil protection uses `civ.enabled`); SETUP and Technical stay visible and parameters are
   preserved when a tab is hidden.
+- 0.5.37: full code audit fixed orphan banner timers, post-stop notifications, unlogged NC HTTP errors, civil-warning
+  escalation lost to dedupe, manual tests racing with polls, stale F1 picks following the wrong race, legacy baselines
+  stalling sport polling, malformed query escapes, explicit empty sim lists being restored, silent config type coercion,
+  and next-hint/weather-warning retention. 21 mocked tests, including new audit regressions.
 - **`mode: "overlay"` confirmed working** with Notification Center 0.8.0.

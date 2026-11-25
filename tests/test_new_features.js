@@ -5,7 +5,7 @@ var https = require('https'), http = require('http');
 function emitter() {
   var h = {};
   return { on: function (e, f) { (h[e] = h[e] || []).push(f); return this; }, emit: function (e, a) { (h[e] || []).forEach(function (f) { f(a); }); },
-    setEncoding: function () {}, resume: function () {}, destroy: function () {} };
+    setEncoding: function () {}, resume: function () {}, destroy: function () {}, statusCode: 200 };
 }
 function respond(cb, code, text) {
   var r = emitter(); r.statusCode = code;
@@ -36,8 +36,10 @@ function get(sub) {
   });
 }
 function assert(ok, msg) { if (!ok) { throw new Error('FAILED: ' + msg); } console.log('ok - ' + msg); }
+function wait(ms) { return new Promise(function (r) { setTimeout(r, ms || 80); }); }
 
 (async function () {
+  shard.start();
   var r = await post('config', {
     modules: { sport: true, weather: false, news: false }, lang: 'en',
     keys: { apifootball: 'SECRET-KEY-MUST-NOT-LEAK' },
@@ -82,6 +84,8 @@ function assert(ok, msg) { if (!ok) { throw new Error('FAILED: ' + msg); } conso
       { sport: 'basketball', teamId: '14', name: 'Celtics' }
     ] }
   });
+  // Poll once so watch keys really exist; without this the assertion below is vacuous.
+  await post('poll', { module: 'sport' }); await wait();
   var last = await get('last');
   assert(last.code === 200, '/api/last answers 200');
   var body = JSON.stringify(last.body);
@@ -94,8 +98,9 @@ function assert(ok, msg) { if (!ok) { throw new Error('FAILED: ' + msg); } conso
 
   // Two basketball watches must have distinct keys.
   var keys = Object.keys(last.body.watches);
-  assert(keys.length === 0 || keys.some(function (k) { return k.indexOf('basketball') > -1; }),
-    'watch status uses the pick keys');
+  assert(keys.length === 2 && keys.some(function (k) { return k.indexOf('basketball:13') > -1; }) &&
+    keys.some(function (k) { return k.indexOf('basketball:14') > -1; }),
+    'watch status uses the two pick keys (' + keys.length + ')');
 
   shard.stop();
   console.log('\nALL GOOD');

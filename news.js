@@ -52,6 +52,7 @@ module.exports = function (env) {
             var item = items[i++];
             var delay = Math.max(0, NEWS_MIN_GAP - (Date.now() - budget.lastAt));
             function fire() {
+                if (env.isRunning && !env.isRunning()) { return cb(sent); }
                 banner(E.news + ' ' + TXT[c.lang].news + ' \u00B7 ' + feed.name, item.title, 'info', E.news, c.news.seconds,
                     { sound: c.news.sound ? 'soft' : '', mode: c.news.mode, volume: c.news.volume });
                 addLog('news', 'news', item.title);

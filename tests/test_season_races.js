@@ -8,7 +8,7 @@ Date.now = function () { return realNow() + offset; };
 function emitter() {
   var h = {};
   return { on: function (e, f) { (h[e] = h[e] || []).push(f); return this; }, emit: function (e, a) { (h[e] || []).forEach(function (f) { f(a); }); },
-    setEncoding: function () {}, resume: function () {}, destroy: function () {} };
+    setEncoding: function () {}, resume: function () {}, destroy: function () {}, statusCode: 200 };
 }
 function respond(cb, code, text) {
   var r = emitter(); r.statusCode = code;

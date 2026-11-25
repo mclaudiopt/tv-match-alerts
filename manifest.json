@@ -2,7 +2,7 @@
   "id": "match-alerts",
   "apiVersion": 1,
   "name": "TV alerts",
-  "version": "0.5.36",
+  "version": "0.5.37",
   "description": "Sport, weather, news and civil-protection alerts on Samsung TVs through Notification Center.",
   "author": "mclaudiopt",
   "permissions": [],

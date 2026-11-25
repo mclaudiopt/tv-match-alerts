@@ -9,7 +9,7 @@ var failed = 0;
 files.forEach(function (f) {
   var r = cp.spawnSync(process.execPath, [path.join(dir, f)], { encoding: 'utf8', timeout: 120000 });
   var out = String(r.stdout || '') + String(r.stderr || '');
-  var ok = r.status === 0 && /ALL GOOD/.test(out);
+  var ok = r.status === 0 && /(^|\n)ALL GOOD\s*$/.test(String(out).trim());
   if (!ok) { failed++; }
   var lines = out.split(/\r?\n/).filter(function (l) { return l.trim(); });
   var last = lines.length ? lines[lines.length - 1].trim() : '(no output)';

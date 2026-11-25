@@ -1,13 +1,13 @@
 'use strict';
-// The banner queue must be bounded, drops must be logged, and a failed POST to the
-// Notification Center must leave a trace in the Shard log.
+// The banner queue must be bounded, drops and notify failures must be logged, no timer may
+// survive stop(), and the process must exit on its own once the Shard is stopped.
 var https = require('https'), http = require('http');
-var sent = [], failNext = false;
+var sent = [], failNext = false, statusFail = false;
 
 function emitter() {
   var h = {};
   return { on: function (e, f) { (h[e] = h[e] || []).push(f); return this; }, emit: function (e, a) { (h[e] || []).forEach(function (f) { f(a); }); },
-    setEncoding: function () {}, resume: function () {}, destroy: function () {} };
+    setEncoding: function () {}, resume: function () {}, destroy: function () {}, statusCode: 200 };
 }
 function respond(cb, code, text) {
   var r = emitter(); r.statusCode = code;
@@ -22,7 +22,11 @@ http.request = function (opt, cb) {
   rq.end = function () {
     if (failNext) { setImmediate(function () { rq.emit('error', new Error('NC down')); }); }
     else { sent.push(opt); }
-    if (cb) { cb(emitter()); }
+    if (cb) {
+      var res = emitter();
+      if (statusFail) { res.statusCode = 500; }  // real responses always have statusCode
+      cb(res);
+    }
   };
   return rq;
 };
@@ -53,7 +57,10 @@ function assert(ok, msg) { if (!ok) { throw new Error('FAILED: ' + msg); } conso
   assert(pub.notify && pub.notify.queued <= 12, 'queue is bounded (' + (pub.notify && pub.notify.queued) + ')');
   var st = await req(shard, 'state', 'GET');
   assert(/oldest banner dropped/.test(logText(st)), 'an overflowed banner is logged as dropped');
+  sent = [];
   shard.stop();
+  await wait(200);
+  assert(sent.length === 0, 'nothing queued is delivered after stop()');
 
   // Fresh Shard: no queued banners, so the next test banner is sent immediately and can fail.
   var shard2 = make();
@@ -65,8 +72,14 @@ function assert(ok, msg) { if (!ok) { throw new Error('FAILED: ' + msg); } conso
   assert(/NC down/.test(logText(st)), 'a failed notify POST is logged');
   shard2.stop();
 
+  var shard3 = make();
+  shard3.start();
+  statusFail = true;
+  await req(shard3, 'test', 'POST', { kind: 'goal' });
+  await wait(100);
+  st = await req(shard3, 'state', 'GET');
+  assert(/http 500/.test(logText(st)), 'an HTTP error from Notification Center is logged');
+  shard3.stop();
+
   console.log('\nALL GOOD');
-  // Under spawnSync with piped stdio, Node can keep a stdio Socket referenced after stop(), so the
-  // runner sees a timeout even though all assertions passed. End explicitly once the work is done.
-  process.exit(0);
 })().catch(function (e) { console.error(e.stack); process.exit(1); });

@@ -187,7 +187,7 @@ var TXT = {
 };
 
 module.exports = function (ctx) {
-    var running = false;
+    var running = false, stopped = false;
     // Shown next to the panel title. Read once from the manifest so it cannot drift from the bundle.
     var VERSION = '';
     try { VERSION = String(JSON.parse(fs.readFileSync(path.join(__dirname, 'manifest.json'), 'utf8')).version || ''); } catch (e) { VERSION = ''; }
@@ -231,7 +231,8 @@ module.exports = function (ctx) {
         getUrl: getUrl, clean: clean, stripTags: stripTags, byId: byId,
         FEEDS: FEEDS, GN: GN, MAX_FEEDS: MAX_FEEDS, MAX_CLUBS: MAX_CLUBS,
         quietNow: quietNow, TXT: TXT, E: E, banner: banner, addLog: addLog,
-        cfg: cfg, status: status, schedule: schedule, persistHistory: persistHistory
+        cfg: cfg, status: status, schedule: schedule, persistHistory: persistHistory,
+        isRunning: function () { return running && !stopped; }
     });
     // Thin local names keep the polling code below readable and make the move behaviour-neutral.
     function espnTeams(s, l, cb) { return espn.espnTeams(s, l, cb); }
@@ -286,6 +287,7 @@ module.exports = function (ctx) {
         if (log.length > MAX_LOG) { log.pop(); }
     }
     function byId(list, id) { var i; for (i = 0; i < list.length; i++) { if (list[i].id === id) { return list[i]; } } return null; }
+    function dec(s) { try { return decodeURIComponent(s); } catch (e) { return s; } }
     // Feeds escape apostrophes as &#039; and friends. Decode every numeric entity plus the usual named
     // ones, otherwise the TV shows the raw code. &amp; goes last so "&amp;lt;" cannot become "<".
     function decodeEnt(s) {
@@ -403,6 +405,7 @@ module.exports = function (ctx) {
     var BANNER_MAX_MIN = 4, BANNER_GAP = 1000, BANNER_QUEUE_MAX = 12;
     var sendTimes = [], bannerQueue = [], bannerTimer = null;
     function bannerSend(text) {
+        if (stopped) { return; }
         var failed = false;
         function fail(e) {
             if (failed) { return; }
@@ -413,7 +416,11 @@ module.exports = function (ctx) {
             var rq = http.request({
                 host: '127.0.0.1', port: 8099, path: NOTIFY, method: 'POST', timeout: 5000,
                 headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(text) }
-            }, function (r) { r.resume(); });
+            }, function (r) {
+                // Mocks in the tests may omit statusCode; real Node responses always have one.
+                if (r && r.statusCode && r.statusCode !== 200) { fail('http ' + r.statusCode); }
+                if (r && r.resume) { r.resume(); }
+            });
             rq.on('error', fail);
             rq.on('timeout', function () { fail('Notification Center timeout'); rq.destroy(); });
             rq.write(text);
@@ -421,7 +428,11 @@ module.exports = function (ctx) {
         } catch (e) { fail(e); }
     }
     function drainBannerQueue() {
+        // Cancel the handle that fired (or the one scheduled by the previous call). Clearing the
+        // field first used to leave orphan timers running after stop().
+        var fired = bannerTimer;
         bannerTimer = null;
+        clearTimeout(fired);
         var now = Date.now(), wait;
         while (sendTimes.length && now - sendTimes[0] >= 60000) { sendTimes.shift(); }
         while (bannerQueue.length) {
@@ -435,13 +446,13 @@ module.exports = function (ctx) {
             wait = sendTimes.length >= BANNER_MAX_MIN ?
                 Math.max(100, 60000 - (now - sendTimes[0])) :
                 Math.max(100, BANNER_GAP - (now - sendTimes[sendTimes.length - 1]));
-            clearTimeout(bannerTimer);
             bannerTimer = setTimeout(drainBannerQueue, wait);
         }
     }
     // Notification Center 0.8.0: `source` labels the origin, `sound` plays a chime, `group:false`
     // shows every banner even when two look identical, `mode` picks banner / full / overlay.
     function banner(title, message, level, icon, seconds, opts) {
+        if (stopped) { return; }
         opts = opts || {};
         var body = {
             title: clean(title, 40), message: clean(message, 200), level: level, icon: icon || '',
@@ -634,7 +645,6 @@ module.exports = function (ctx) {
             var sc = normSimClub(sl[i]);
             if (sc) { o.sim.clubs.push(sc); }
         }
-        if (!o.sim.clubs.length) { o.sim.clubs = d.sim.clubs.slice(0); }
 
         // 0.4.0 keeps `football`/`others`. Older configs had one team under `sport` (0.2-0.3) or
         // flat at the root (0.1); both are converted to a single club, never dropped.
@@ -842,14 +852,16 @@ module.exports = function (ctx) {
     }
     function persistNextHints() {
         var store = rawCfg(), keys = Object.keys(espn.hints()), out = {}, i, trimmed, hints;
+        hints = espn.hints();
         if (keys.length > 20) {
-            keys = keys.slice(-20);
+            // Keep the most recently used hints, not whatever happened to be inserted last.
+            keys.sort(function (a, b) { return (hints[b] && hints[b].at || 0) - (hints[a] && hints[a].at || 0); });
+            keys = keys.slice(0, 20);
             trimmed = {};
-            hints = espn.hints();
             for (i = 0; i < keys.length; i++) { trimmed[keys[i]] = hints[keys[i]]; }
             espn.setHints(trimmed);
             hints = espn.hints();
-        } else { hints = espn.hints(); }
+        }
         for (i = 0; i < keys.length; i++) { out[keys[i]] = hints[keys[i]]; }
         store.nextHints = out;
         try { ctx.config.set(store); }
@@ -925,6 +937,9 @@ module.exports = function (ctx) {
     }
     function analyse(m, w) {
         var key = w.key + '|' + m.id, prev = last[key], keys = {}, i, ev, fresh = [], goals = [], us, them;
+        // A baseline written by an older version may lack `keys`. Treat it as an empty one instead
+        // of throwing inside an async provider callback (which used to stall sport polling forever).
+        if (prev && !prev.keys) { prev = { keys: {}, our: 0, opp: 0, state: prev.state || '' }; }
         watchStatus[w.key] = { line: lineOf(m), state: m.desc, at: Date.now(), error: '' };
         if (m.state === 'in' || m.state === 'post') {
             nextGame[w.key] = null;
@@ -1028,7 +1043,10 @@ module.exports = function (ctx) {
                     // Hard guard: only a match with one of my teams may ever reach the screen.
                     if (!m.race && m.home.id !== w.teamId && m.away.id !== w.teamId) { continue; }
                     withSummary(sportPath(w, usedComp), raw, m, (function (mm, ww) {
-                        return function () { analyse(mm, ww); };
+                        return function () {
+                            try { analyse(mm, ww); }
+                            catch (e) { addLog('sport', 'error', 'analyse: ' + String(e && e.message || e)); }
+                        };
                     })(m, w));
                     var w2 = m.state === 'in' ? 20000 : (m.state === 'pre' ? 30000 : 120000);
                     wait = wait ? Math.min(wait, w2) : w2;
@@ -1128,7 +1146,11 @@ module.exports = function (ctx) {
     }
 
     // ---- civil protection: IPMA warnings + ANEPC notices + filtered breaking news ------------------------------------------------
-    function civKey(a) { return a.source + '|' + a.area + '|' + a.type + '|' + a.startsAt; }
+    // Include the level and the notice title/url: an orange warning upgraded to red (or a second
+    // ANEPC notice on the same day) is a different alert and must be announced again.
+    function civKey(a) {
+        return a.source + '|' + a.area + '|' + a.type + '|' + a.startsAt + '|' + a.level + '|' + clean(a.title || a.url || '', 60);
+    }
     function parseEuroDate(s) {
         var m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(String(s || '').trim());
         return m ? new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])).getTime() : 0;
@@ -1180,7 +1202,7 @@ module.exports = function (ctx) {
                 out.push({
                     id: '', source: 'ANEPC', area: '', type: 'Aviso \u00E0 popula\u00E7\u00E3o',
                     level: 'warn', title: title, message: 'Publicado a ' + day + '. Siga as orienta\u00E7\u00F5es oficiais.',
-                    startsAt: day, endsAt: '', url: 'https://prociv.gov.pt' + href[1]
+                    startsAt: day, endsAt: '', url: /^https?:\/\//.test(href[1]) ? href[1] : ('https://prociv.gov.pt' + (href[1].charAt(0) === '/' ? '' : '/') + href[1])
                 });
             }
             cb(out);
@@ -1374,34 +1396,37 @@ module.exports = function (ctx) {
         if (skip || (!manual && w.quiet && quietNow())) { return; }
         var h = raw.hourly, times = h.time || [], i, t, now = Date.now(), end = now + p.minutes * 60000;
         var found = {}, order = [];
-        function add(kind, label, msg, icon, at) {
-            if (found[kind]) { return; }
-            found[kind] = true;
-            order.push({ kind: kind, label: label, msg: msg, icon: icon, at: at });
+        function add(kind, label, msg, icon, at, slot, severity) {
+            var e = { kind: kind, label: label, msg: msg, icon: icon, at: at, slot: slot, severity: severity }, j;
+            for (j = 0; j < order.length; j++) { if (order[j].kind === kind) { break; } }
+            // Keep the strongest occurrence of each phenomenon in the window, not just the first.
+            if (j < order.length && order[j].severity >= severity) { return; }
+            if (j < order.length) { order[j] = e; } else { order.push(e); }
         }
         for (i = 0; i < times.length; i++) {
             t = new Date(times[i]).getTime();
             if (!(t >= now - 1800000 && t <= end)) { continue; }
             var d = new Date(t), when = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+            var slot = String(times[i] || '').slice(0, 13);   // Open-Meteo returns local time here
             var prob = parseInt((h.precipitation_probability || [])[i], 10) || 0;
             var wind = parseFloat((h.wind_speed_10m || [])[i]) || 0;
             var temp = parseFloat((h.temperature_2m || [])[i]) || 0;
             var code = parseInt((h.weather_code || [])[i], 10) || 0;
             if (p.rain && prob >= p.rainPct) {
-                add('rain', TXT[c.lang].wRain, TXT[c.lang].wRain + ' ' + when + ' \u00B7 ' + prob + '%', E.rain, t);
+                add('rain', TXT[c.lang].wRain, TXT[c.lang].wRain + ' ' + when + ' \u00B7 ' + prob + '%', E.rain, t, slot, prob);
             }
             if (p.wind && wind >= p.windKmh) {
-                add('wind', TXT[c.lang].wWind, TXT[c.lang].wWind + ' ' + when + ' \u00B7 ' + Math.round(wind) + ' km/h', E.cloud, t);
+                add('wind', TXT[c.lang].wWind, TXT[c.lang].wWind + ' ' + when + ' \u00B7 ' + Math.round(wind) + ' km/h', E.cloud, t, slot, wind);
             }
             if (p.heat && temp >= p.heatC) {
-                add('heat', TXT[c.lang].wHeat, TXT[c.lang].wHeat + ' ' + when + ' \u00B7 ' + Math.round(temp) + '\u00B0C', E.sun, t);
+                add('heat', TXT[c.lang].wHeat, TXT[c.lang].wHeat + ' ' + when + ' \u00B7 ' + Math.round(temp) + '\u00B0C', E.sun, t, slot, temp);
             }
             if (p.storm && code >= p.stormCode) {
-                add('storm', TXT[c.lang].wStorm, TXT[c.lang].wStorm + ' ' + when, E.storm, t);
+                add('storm', TXT[c.lang].wStorm, TXT[c.lang].wStorm + ' ' + when, E.storm, t, slot, code);
             }
         }
         for (i = 0; i < order.length; i++) {
-            var a = order[i], key = a.kind + '|' + new Date(a.at).toISOString().slice(0, 13);
+            var a = order[i], key = w.place + '|' + a.kind + '|' + (a.slot || new Date(a.at).toISOString().slice(0, 13));
             if (weatherWarned[key]) { continue; }
             weatherWarned[key] = true;
             persistWeatherWarned();
@@ -1448,12 +1473,13 @@ module.exports = function (ctx) {
         clearTimeout(timers[name]);
         timers[name] = setTimeout(function () { poll(name); }, ms);
     }
-    function poll(name) {
+    function poll(name, manual) {
         if (!running) { return; }
         if (name === 'all') { poll('sport'); poll('civ'); poll('weather'); poll('news'); return; }
         // A disabled module must not be polled again: "Check now" used to restart the timers of every
-        // module, including the ones switched off.
-        if (name === 'civ' ? !cfg().civ.enabled : !cfg().modules[name]) { status[name].next = 0; return; }
+        // module, including the ones switched off. Manual tests are the exception: they must work
+        // even when the module is off, but still go through the busy[] guard below.
+        if (!manual && (name === 'civ' ? !cfg().civ.enabled : !cfg().modules[name])) { status[name].next = 0; return; }
         // One poll at a time per module: "Check now" plus the timer used to run two requests and
         // two banners for the same goal.
         if (busy[name]) { return; }
@@ -1461,9 +1487,9 @@ module.exports = function (ctx) {
         clearTimeout(timers[name]);
         try {
             if (name === 'sport') { pollSport(); }
-            else if (name === 'civ') { pollCiv(false); }
-            else if (name === 'weather') { pollWeather(false); }
-            else { pollNews(false); }
+            else if (name === 'civ') { pollCiv(!!manual); }
+            else if (name === 'weather') { pollWeather(!!manual); }
+            else { pollNews(!!manual); }
         } catch (e) {
             busy[name] = false;
             addLog(name, 'error', String(e && e.message || e));
@@ -1530,7 +1556,8 @@ module.exports = function (ctx) {
 
     return {
         start: function () {
-            running = true;
+            running = true; stopped = false;
+            bannerQueue.length = 0; sendTimes.length = 0;
             busy = { sport: false, weather: false, news: false, civ: false };
             loadHistory();
             loadWeatherWarned();
@@ -1544,7 +1571,9 @@ module.exports = function (ctx) {
             kick('sport', 3000); kick('civ', 5000); kick('weather', 8000); kick('news', 13000);
         },
         stop: function () {
-            running = false;
+            running = false; stopped = true;
+            // Nothing queued before shutdown may be delivered later.
+            bannerQueue.length = 0; sendTimes.length = 0;
             clearInterval(soundTimer); soundTimer = null;
             clearTimeout(bannerTimer); bannerTimer = null;
             Object.keys(timers).forEach(function (k) { clearTimeout(timers[k]); });
@@ -1585,7 +1614,7 @@ module.exports = function (ctx) {
                 var p = {}, parts = qs.split('&'), i, kv;
                 for (i = 0; i < parts.length; i++) {
                     kv = parts[i].split('=');
-                    if (kv[0]) { p[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || ''); }
+                    if (kv[0]) { p[dec(kv[0])] = dec(kv[1] || ''); }
                 }
                 var answer = function () {
                     var sport = p.sport || 'soccer', league = p.league || 'por.1';
@@ -1628,7 +1657,7 @@ module.exports = function (ctx) {
                 var gp = {}, gparts = qs.split('&'), gi, gkv;
                 for (gi = 0; gi < gparts.length; gi++) {
                     gkv = gparts[gi].split('=');
-                    if (gkv[0]) { gp[decodeURIComponent(gkv[0])] = decodeURIComponent(gkv[1] || ''); }
+                    if (gkv[0]) { gp[dec(gkv[0])] = dec(gkv[1] || ''); }
                 }
                 function search() {
                     var name = clean(gp.name || '', 80).trim();
@@ -1685,6 +1714,7 @@ module.exports = function (ctx) {
             if (sub === 'config' && req.method === 'POST') {
                 readBody(req, function (raw) {
                     var b = {}, store = rawCfg(), c = cfg();
+                    var rawBefore = JSON.parse(JSON.stringify(store));
                     var before = {
                         clubs: JSON.stringify(c.football.clubs), prov: c.football.provider,
                         feeds: c.news.feeds.join(','), place: c.weather.place,
@@ -1695,6 +1725,23 @@ module.exports = function (ctx) {
                     };
                     try { b = JSON.parse(raw); } catch (e) { return sendJson(res, 400, { error: 'invalid JSON' }); }
                     b = b || {};
+                    // Wrong types must be refused instead of silently clamped to a default.
+                    var numeric = [
+                        ['weather', 'interval'], ['weather', 'seconds'], ['weather', 'volume'],
+                        ['weather', 'proactive', 'minutes'], ['weather', 'proactive', 'rainPct'],
+                        ['weather', 'proactive', 'windKmh'], ['weather', 'proactive', 'heatC'], ['weather', 'proactive', 'stormCode'],
+                        ['news', 'interval'], ['news', 'seconds'], ['news', 'count'], ['news', 'volume'],
+                        ['civ', 'interval'], ['civ', 'seconds'], ['civ', 'volume'],
+                        ['football', 'goalSeconds'], ['football', 'otherSeconds'], ['football', 'volume'],
+                        ['others', 'seconds'], ['others', 'volume']
+                    ];
+                    for (var np = 0; np < numeric.length; np++) {
+                        var node = b, ni;
+                        for (ni = 0; ni < numeric[np].length && node; ni++) { node = node[numeric[np][ni]]; }
+                        if (node !== undefined && typeof node !== 'number') {
+                            return sendJson(res, 400, { error: 'expected a number: ' + numeric[np].join('.') });
+                        }
+                    }
                     var f = b.football || {}, ob = b.others || {}, we = b.weather || {}, ne = b.news || {}, mo = b.modules || {}, cv = b.civ || {}, sv = b.sim || {};
                     if (b.lang === 'en' || b.lang === 'pt') { c.lang = b.lang; }
                     Object.keys(c.modules).forEach(function (k) { if (typeof mo[k] === 'boolean') { c.modules[k] = mo[k]; } });
@@ -1863,12 +1910,12 @@ module.exports = function (ctx) {
                     if (before.feeds !== c.news.feeds.join(',')) { newsApi.clear(); }
                     if (before.civ !== JSON.stringify(c.civ)) { civSeen = {}; }
                     sendJson(res, 200, { config: publicCfg() });
-                    if (sportReset || (!before.mods.sport && c.modules.sport)) { kick('sport', 1000); }
+                    if (sportReset || (!rawBefore.modules || !rawBefore.modules.sport) && c.modules.sport) { kick('sport', 1000); }
                     if (before.place !== c.weather.place || before.custom !== JSON.stringify(c.weather.custom) ||
                         before.wprov !== c.weather.provider || before.wwhen !== c.weather.when ||
-                        (!before.mods.weather && c.modules.weather)) { kick('weather', 2000); }
-                    if (before.feeds !== c.news.feeds.join(',') || (!before.mods.news && c.modules.news)) { kick('news', 3000); }
-                    if (before.civ !== JSON.stringify(c.civ) || (!rawCfg().civ && c.civ.enabled)) { kick('civ', 4000); }
+                        (!rawBefore.modules || !rawBefore.modules.weather) && c.modules.weather) { kick('weather', 2000); }
+                    if (before.feeds !== c.news.feeds.join(',') || (!rawBefore.modules || !rawBefore.modules.news) && c.modules.news) { kick('news', 3000); }
+                    if (before.civ !== JSON.stringify(c.civ) || (!rawBefore.civ && c.civ.enabled)) { kick('civ', 4000); }
                 });
                 return true;
             }
@@ -1911,9 +1958,9 @@ module.exports = function (ctx) {
                     }
                     if (kind === 'weather' || kind === 'news' || kind === 'civ') {
                         sendJson(res, 200, { ok: true });
-                        if (kind === 'weather') { pollWeather(true); }
-                        else if (kind === 'news') { pollNews(true); }
-                        else { pollCiv(true); }
+                        if (kind === 'weather') { poll('weather', true); }
+                        else if (kind === 'news') { poll('news', true); }
+                        else { poll('civ', true); }
                         return;
                     }
                     var w = {

@@ -154,8 +154,9 @@ module.exports = function (env) {
         var i, j, m, want, label, ev = null;
         if (sport === 'f1') {
             // A race pick carries the ESPN event id in `teamId`; older configs had only a label.
-            // Match the id first, then a distinctive name, and only then fall back to the first
-            // race on the board. Without this, every F1 pick followed the same race.
+            // Match the id first, then a distinctive name. Never fall back to evs[0] for an explicit
+            // pick: a stale id/name would silently follow a different Grand Prix and announce its
+            // winner. Only the legacy generic pick (no id, no distinctive name) uses evs[0].
             if (teamId) {
                 for (i = 0; i < evs.length; i++) {
                     if (String(evs[i].id) === String(teamId)) { ev = evs[i]; break; }
@@ -168,7 +169,10 @@ module.exports = function (env) {
                     if (label.length >= 3 && (label === want || label.indexOf(want) > -1 || want.indexOf(label) > -1)) { ev = evs[i]; }
                 }
             }
-            if (!ev) { ev = evs[0]; }
+            if (!ev) {
+                if (teamId || want.length >= 3) { return null; }
+                ev = evs[0];
+            }
             return ev ? { m: espnRaceNorm(ev), raw: ev } : null;
         }
         for (i = 0; i < evs.length; i++) {

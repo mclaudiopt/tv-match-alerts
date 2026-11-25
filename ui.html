@@ -168,7 +168,7 @@ details.sec .grid { margin-top:8px; }
             <label class="chk"><input type="checkbox" id="wp-enabled"> <span data-t="wpEnable">Enable</span></label>
             <label class="f" data-t="wpMinutes">Look ahead</label>
             <select id="wp-minutes"><option value="30">30 min</option><option value="60">60 min</option><option value="120">120 min</option><option value="180">180 min</option></select>
-            <label class="chk"><input type="checkbox" id="wp-rain"> <span data-t="wRain">Rain (60%)</span></label>
+            <label class="chk"><input type="checkbox" id="wp-rain"> <span data-t="wRain">Rain</span></label>
             <label class="chk"><input type="checkbox" id="wp-wind"> <span data-t="wWind">Wind</span></label>
             <label class="chk"><input type="checkbox" id="wp-heat"> <span data-t="wHeat">Heat</span></label>
             <label class="chk"><input type="checkbox" id="wp-storm"> <span data-t="wStorm">Thunderstorm</span></label>
@@ -566,7 +566,7 @@ details.sec .grid { margin-top:8px; }
         { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
     } catch (e) { return String(iso).slice(0, 16); }
   }
-  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
   function applyText() {
     var i, els = document.querySelectorAll("[data-t]");
     for (i = 0; i < els.length; i++) { els[i].textContent = tr(els[i].getAttribute("data-t")); }

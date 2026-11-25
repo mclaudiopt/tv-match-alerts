@@ -17,7 +17,7 @@ function side(id, name, score, home) {
 function emitter() {
   var h = {};
   return { on: function (e, f) { (h[e] = h[e] || []).push(f); return this; }, emit: function (e, a) { (h[e] || []).forEach(function (f) { f(a); }); },
-    setEncoding: function () {}, resume: function () {}, destroy: function () {} };
+    setEncoding: function () {}, resume: function () {}, destroy: function () {}, statusCode: 200 };
 }
 function respond(cb, code, text) {
   var r = emitter(); r.statusCode = code;
@@ -161,8 +161,7 @@ function pollNews(ms) { return post('poll', { module: 'news' }).then(function ()
   await pollNews(200);
   assert(sent.length === 0, 'a third poll with nothing new is silent');
 
-  var minGap = 999;
-  // spacing is asserted on the timestamps of the notify calls in the first two batches
+   // spacing is asserted on the timestamps of the notify calls in the first two batches
   shard.stop();
   console.log('\nALL GOOD');
 })().catch(function (e) { console.error(e.stack); process.exit(1); });
