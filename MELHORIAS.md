@@ -1,6 +1,6 @@
 # TV alerts — bugs, correções e melhorias
 
-Estado: código e TV em **0.5.38**; Notification Center **0.14.0**. Por decisão do Marcelo, **não implementar** a chave API-Football (P1-5) nem a deduplicação de notícias (B5). ESPN é o fornecedor a usar. As três melhorias pedidas na última sessão estão feitas e fechadas abaixo; não há outras ideias em aberto.
+Estado: código em **0.5.41**; TVs .7 e .3 em 0.5.40 até à próxima instalação; Notification Center .7 **0.16.0**, .3 **0.17.1**. Nome oficial do Shard: **NEWS** (id `match-alerts`). Por decisão do Marcelo, **não implementar** a chave API-Football (P1-5) nem a deduplicação de notícias (B5). ESPN é o fornecedor a usar. As três melhorias pedidas na última sessão estão feitas e fechadas abaixo; não há outras ideias em aberto.
 
 ---
 
@@ -51,6 +51,9 @@ Antes, dois picks com o mesmo desporto colidiam: a rota de config dedupava por `
 | 0.5.36 | Separador Geral passa a chamar-se **SETUP**; os quatro interruptores de módulos mostram/ocultam as tabs correspondentes (Desporto = Futebol + Outros desportos; Proteção Civil usa `civ.enabled`); parâmetros mantidos. |
 | 0.5.37 | Auditoria: timers órfãos de banners, envios após stop, erros HTTP do NC não registados, escalação laranja→vermelho perdida, testes manuais em corrida com polls, pick F1 antigo seguir corrida errada, baseline legado parar o desporto, query malformada, sim vazio restaurado, tipos de config silentemente coercidos, retenção de hints/avisos. 21 testes. |
 | 0.5.38 | Design/accessibilidade (tema claro/escuro, tokens, max-width, ARIA, hidden, confirmação em 2 cliques, erro amigável, exemplos curl/rotas); cartão no Control center com ações Check now; `status()` com civ/saúde; gate ES5 no CI; PR para o catálogo oficial. |
+| 0.5.39 | Correção do intervalo: `First Half` / `Second Half` da ESPN são tempo de jogo, não descanso; só `Halftime` / `Half Time` / `HT` / `Intervalo` com estado `in` anunciam "Intervalo". O apito inicial deixou de enviar "Começou o jogo" + "Intervalo" juntos (visto no Sporting–Manchester United aos 1'). Teste de regressão `tests/test_half_time.js` (22 testes). |
+| 0.5.41 | Nome oficial **NEWS**; PR 42 actualizado com a clarificação NC 0.3.1 vs 0.8.0+; `check-nc.ps1` com snapshot por TV; `build.ps1 -Install` multi-TV; Tempo com duas colunas (meteorologia | Proteção Civil) e Desporto com sub-tabs Futebol / Outros desportos.
+| 0.5.40 | Penalties: `Penalty - Saved` / `Penalty - Missed` da ESPN (sem golo) passam a anunciar "Penalty falhado" com o nome do marcador; `Penalty Awarded` anuncia "Penalty marcado"; penalty convertido continua a ser golo. Dois interruptores novos no separador Futebol, ligados por omissão. Teste `tests/test_penalty.js` (23 testes). NC 0.14.1 (só tema `estadio`, sem campos novos no notify). |
 | várias | Vários clubes e competições, várias fontes, vários desportos, scoreboard só do clube escolhido, overlay, migração de configs antigas. |
 
 ---
@@ -68,5 +71,5 @@ Antes, dois picks com o mesmo desporto colidiam: a rota de config dedupava por `
 ## Nota de estado
 
 TV: 3 clubes seguidos, 4 clubes de teste (Sporting/Benfica/Porto/Feyenoord), notícias **apenas Google News (PT)**, tempo em **Caldas da Rainha** (lat 39.40326, lon -9.13839), volumes todos em 100, aviso antes do jogo ligado a 30 min, teto global 4 banners/minuto.
-Separadores (6): Geral, Tempo, Notícias, Proteção Civil, Futebol (com a simulação de golos lá dentro), Outros desportos. Cada separador tem uma coluna `.stack` de cartões largos com secções recolhíveis; Estilo (Modo/Som/Volume) agrupado em cada separador.
+Separadores (5): SETUP, Tempo (duas colunas: meteorologia e Proteção Civil), Notícias, Desporto (sub-tabs Futebol com simulação de golos e Outros desportos) e Técnico. Cada cartão tem secções recolhíveis; Estilo (Modo/Som/Volume) agrupado em cada secção.
 Pontos de restauro: `_backup-tv-alerts-0.4.5-*` a `_backup-tv-alerts-0.5.29-*` em `C:\Users\marce\Documents\Projeto Padrão\`.

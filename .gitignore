@@ -3,3 +3,4 @@ node_modules/
 .claude/
 dist/
 build/
+.nc-api-*.json

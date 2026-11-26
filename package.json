@@ -1,6 +1,6 @@
 {
   "name": "tv-match-alerts",
-  "version": "0.5.38",
+  "version": "0.5.41",
   "private": true,
   "description": "Vetro Shard for Samsung TVs: sport, weather, news and civil-protection alerts through Notification Center.",
   "scripts": {

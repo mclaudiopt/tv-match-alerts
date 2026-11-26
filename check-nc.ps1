@@ -6,11 +6,20 @@
 #
 #   pwsh -File check-nc.ps1
 #   pwsh -File check-nc.ps1 -Tv 192.168.1.7:8099
+#   pwsh -File check-nc.ps1 -Tv 192.168.1.3:8099
+#
+# Each TV keeps its own snapshot (.nc-api.json for 192.168.1.7, .nc-api-<IP>.json for the others),
+# so checking a second TV cannot overwrite the first one's baseline.
 
-param([string]$Tv = "192.168.1.7:8099")
+param([string]$Tv = "192.168.1.7:8099", [string]$Snapshot = "")
 
 $ErrorActionPreference = "Stop"
-$snap = Join-Path $PSScriptRoot ".nc-api.json"
+if (-not $Snapshot) {
+    $hostOnly = ($Tv -split ':')[0]
+    if ($hostOnly -eq '192.168.1.7') { $Snapshot = Join-Path $PSScriptRoot ".nc-api.json" }
+    else { $Snapshot = Join-Path $PSScriptRoot (".nc-api-" + $hostOnly + ".json") }
+}
+$snap = $Snapshot
 
 try {
     $api = Invoke-RestMethod -Method GET -Uri "http://$Tv/plugins/notification-center/api/api" -TimeoutSec 8

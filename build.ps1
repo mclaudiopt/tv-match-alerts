@@ -2,7 +2,7 @@
 #
 #   pwsh -File build.ps1                          # check + pack
 #   pwsh -File build.ps1 -Install                 # check + pack + install on the TV
-#   pwsh -File build.ps1 -Install -TvIp 192.168.1.7
+#   pwsh -File build.ps1 -Install -TvIp 192.168.1.7,192.168.1.3
 #
 # The Vetro packer is vendored in tools/vetro/ (MIT, see tools/vetro/LICENSE) so the build
 # never depends on a clone in %TEMP%. Staging lives in build/stage and is gitignored; never
@@ -10,10 +10,11 @@
 
 param(
     [switch]$Install,
-    [string]$TvIp = "192.168.1.7"
+    [string[]]$TvIp = @("192.168.1.7")
 )
 
 $ErrorActionPreference = "Stop"
+$TvIp = @($TvIp | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 $root = $PSScriptRoot
 $stage = Join-Path $root "build\stage"
 $dist = Join-Path $root "dist"
@@ -22,8 +23,10 @@ $packer = Join-Path $root "tools\vetro\scripts\vetro-plugin.cjs"
 function Fail($message) { Write-Error $message; exit 1 }
 
 Write-Host "== Notification Center drift check"
-& (Join-Path $root "check-nc.ps1") -Tv "${TvIp}:8099"
-if ($LASTEXITCODE -ne 0) { Fail "Notification Center changed or unreachable; fix that before packing." }
+foreach ($ip in $TvIp) {
+    & (Join-Path $root "check-nc.ps1") -Tv "${ip}:8099"
+    if ($LASTEXITCODE -ne 0) { Fail "Notification Center changed or unreachable on $ip; fix that before packing." }
+}
 
 Write-Host "== Clean staging"
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
@@ -59,17 +62,19 @@ $old = Get-ChildItem $dist -Filter "match-alerts-*.vplugin" | Sort-Object LastWr
 foreach ($f in $old) { Remove-Item $f.FullName -Force; Write-Host "Removed old bundle: $($f.Name)" }
 
 if ($Install) {
-    $base = "http://${TvIp}:8099"
-    Write-Host "== Install on $TvIp"
-    $null = Invoke-WebRequest -Uri "$base/plugins/match-alerts/disable" -Method POST -UseBasicParsing -TimeoutSec 20
-    $r = Invoke-WebRequest -Uri "$base/plugins/install" -Method POST -InFile $bundle -ContentType "application/octet-stream" -Headers @{ "X-Vetro-Sha256" = $sha } -UseBasicParsing -TimeoutSec 60
-    $answer = $r.Content | ConvertFrom-Json
-    if (-not $answer.ok) { Fail "Install failed: $($r.Content)" }
-    $null = Invoke-WebRequest -Uri "$base/plugins/match-alerts/enable" -Method POST -UseBasicParsing -TimeoutSec 20
-    $list = (Invoke-WebRequest -Uri "$base/plugins" -UseBasicParsing -TimeoutSec 15).Content | ConvertFrom-Json
-    $e = $list.plugins | Where-Object { $_.id -eq "match-alerts" } | Select-Object -First 1
-    if (-not $e -or $e.version -ne $version -or -not $e.enabled -or $e.state -ne "running" -or $e.errors -ne 0) {
-        Fail "TV verification failed: $($e | ConvertTo-Json -Compress)"
+    foreach ($ip in $TvIp) {
+        $base = "http://${ip}:8099"
+        Write-Host "== Install on $ip"
+        $null = Invoke-WebRequest -Uri "$base/plugins/match-alerts/disable" -Method POST -UseBasicParsing -TimeoutSec 20
+        $r = Invoke-WebRequest -Uri "$base/plugins/install" -Method POST -InFile $bundle -ContentType "application/octet-stream" -Headers @{ "X-Vetro-Sha256" = $sha } -UseBasicParsing -TimeoutSec 60
+        $answer = $r.Content | ConvertFrom-Json
+        if (-not $answer.ok) { Fail "Install failed on $ip`: $($r.Content)" }
+        $null = Invoke-WebRequest -Uri "$base/plugins/match-alerts/enable" -Method POST -UseBasicParsing -TimeoutSec 20
+        $list = (Invoke-WebRequest -Uri "$base/plugins" -UseBasicParsing -TimeoutSec 15).Content | ConvertFrom-Json
+        $e = $list.plugins | Where-Object { $_.id -eq "match-alerts" } | Select-Object -First 1
+        if (-not $e -or $e.version -ne $version -or -not $e.enabled -or $e.state -ne "running" -or $e.errors -ne 0) {
+            Fail "TV verification failed on $ip`: $($e | ConvertTo-Json -Compress)"
+        }
+        Write-Host "TV OK: $ip $($e.id) $($e.version) enabled=$($e.enabled) state=$($e.state) errors=$($e.errors)"
     }
-    Write-Host "TV OK: $($e.id) $($e.version) enabled=$($e.enabled) state=$($e.state) errors=$($e.errors)"
 }
