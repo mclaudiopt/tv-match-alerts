@@ -54,7 +54,7 @@ module.exports = function (env) {
             function fire() {
                 if (env.isRunning && !env.isRunning()) { return cb(sent); }
                 banner(E.news + ' ' + TXT[c.lang].news + ' \u00B7 ' + feed.name, item.title, 'info', E.news, c.news.seconds,
-                    { sound: c.news.sound ? 'soft' : '', mode: c.news.mode, volume: c.news.volume });
+                    { category: 'news', sound: c.news.sound ? 'soft' : '', mode: c.news.mode, volume: c.news.volume });
                 addLog('news', 'news', item.title);
                 budget.left--; sent++;
                 budget.lastAt = Date.now();

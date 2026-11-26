@@ -306,3 +306,7 @@ the LAN — by design, since it carries no config or keys. Disable the Shard or 
 - 0.5.45: the **Right now** card (status lines and Check now) moved from SETUP to **Technical**, and the On/Off text labels were removed from all switches — the pill alone shows the state.
 - 0.5.46: panel follows the shared `VETRO-UI-SHARDS.md` convention — dark Vetro tokens, every option as a `.setting` with the name on the left and an on/off switch on the right (`On/Off`, or `Ligado/Desligado` in Portuguese), no visible checkboxes, Vetro-style tabs, cards, buttons and focus rings.
 - **`mode: "overlay"` confirmed working** with Notification Center 0.8.0.
+
+## 0.5.47 (2026-11-26)
+
+Sending to the Notification Center: real 5 s time limit, the answer is read, up to 3 retries (network error, 429, 5xx, failed; not 400/403), and every notification has a `category`.

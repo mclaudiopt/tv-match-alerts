@@ -78,3 +78,7 @@ Antes, dois picks com o mesmo desporto colidiam: a rota de config dedupava por `
 TV: 3 clubes seguidos, 4 clubes de teste (Sporting/Benfica/Porto/Feyenoord), notícias **apenas Google News (PT)**, tempo em **Caldas da Rainha** (lat 39.40326, lon -9.13839), volumes todos em 100, aviso antes do jogo ligado a 30 min, teto global 4 banners/minuto.
 Separadores (5): SETUP, Tempo (duas colunas: meteorologia e Proteção Civil), Notícias, Desporto (sub-tabs Futebol com simulação de golos e Outros desportos) e Técnico. Cada cartão tem secções recolhíveis; Estilo (Modo/Som/Volume) agrupado em cada secção.
 Pontos de restauro: `_backup-tv-alerts-0.4.5-*` a `_backup-tv-alerts-0.5.29-*` em `C:\Users\marce\Documents\Projeto Padrão\`.
+
+## 0.5.47 (2026-11-26)
+
+Sending to the Notification Center: real 5 s time limit, the answer is read, up to 3 retries (network error, 429, 5xx, failed; not 400/403), and every notification has a `category`.

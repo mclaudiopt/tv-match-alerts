@@ -76,3 +76,7 @@ Lê `C:\Users\marce\Documents\Projeto Padrão\ESTADO.md` no início de cada tare
 1. Cada projeto tem um só dono.
 2. Uma sessão ativa por pasta.
 3. O trabalho só termina depois de atualizar o `ESTADO.md`.
+
+## 0.5.47 (2026-11-26)
+
+Sending to the Notification Center: real 5 s time limit, the answer is read, up to 3 retries (network error, 429, 5xx, failed; not 400/403), and every notification has a `category`.

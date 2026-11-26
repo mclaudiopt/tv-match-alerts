@@ -404,28 +404,60 @@ module.exports = function (ctx) {
     // protection `high` priority bypasses the limit and is never queued.
     var BANNER_MAX_MIN = 4, BANNER_GAP = 1000, BANNER_QUEUE_MAX = 12;
     var sendTimes = [], bannerQueue = [], bannerTimer = null;
-    function bannerSend(text) {
+    // The Notification Center says whether it took the notification. A network error, a timeout, a 5xx, a 429 or an answer "failed" is tried again
+    // (3 times at most, waiting what the hub asks); a 400 or 403 is not. stop() cancels what still waits.
+    var NC_TRIES = 3, NC_WAIT = 30000, retryTimers = [];
+    function clearRetries() { retryTimers.forEach(function (t) { clearTimeout(t); }); retryTimers = []; }
+    function bannerSend(text, tries) {
         if (stopped) { return; }
-        var failed = false;
-        function fail(e) {
-            if (failed) { return; }
-            failed = true;
-            addLog('notify', 'error', String(e && e.message || e || 'notify failed'));
+        var done = false;
+        tries = tries || 0;
+        function fail(e, again) {
+            if (done) { return; }
+            done = true;
+            var retry = again > 0 && tries < NC_TRIES && !stopped;
+            addLog('notify', 'error', String(e && e.message || e || 'notify failed') + (retry ? ' (will try again)' : ''));
+            if (!retry) { return; }
+            var timer = setTimeout(function () {
+                retryTimers.splice(retryTimers.indexOf(timer), 1);
+                bannerSend(text, tries + 1);
+            }, again);
+            retryTimers.push(timer);
+        }
+        function answer(code, raw) {
+            var j = null, wait;
+            try { j = JSON.parse(raw); } catch (e) { j = null; }
+            if (code && code !== 200) {
+                wait = code === 429 ? (j && j.retryAfter > 0 ? Math.min(j.retryAfter, 300) * 1000 : NC_WAIT) : (code >= 500 ? NC_WAIT : 0);
+                return fail('http ' + code + (j && j.error ? ': ' + j.error : ''), wait);
+            }
+            if (j && j.status === 'failed') { return fail('Notification Center: ' + (j.reason || 'failed'), NC_WAIT); }
+            done = true;
         }
         try {
             var rq = http.request({
                 host: '127.0.0.1', port: 8099, path: NOTIFY, method: 'POST', timeout: 5000,
                 headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(text) }
             }, function (r) {
-                // Mocks in the tests may omit statusCode; real Node responses always have one.
-                if (r && r.statusCode && r.statusCode !== 200) { fail('http ' + r.statusCode); }
-                if (r && r.resume) { r.resume(); }
+                var raw = '';
+                // Mocks in the tests may omit statusCode and events; real Node responses always have them.
+                if (!r) { return; }
+                // Only a 429 needs its body (retryAfter): any other error is decided by the status alone.
+                if (r.statusCode && r.statusCode !== 200 && (r.statusCode !== 429 || !r.on)) { answer(r.statusCode, ''); }
+                if (r.on) {
+                    r.on('data', function (d) { if (raw.length < 4000) { raw += d; } });
+                    r.on('end', function () { if (!done) { answer(r.statusCode, raw); } });
+                }
+                if (r.resume) { r.resume(); }
             });
-            rq.on('error', fail);
-            rq.on('timeout', function () { fail('Notification Center timeout'); rq.destroy(); });
+            var late = function () { fail('Notification Center timeout', NC_WAIT); rq.destroy(); };
+            rq.on('error', function (e) { fail(e, NC_WAIT); });
+            rq.on('timeout', late);
+            // The `timeout` option does nothing on the old Node of some TVs.
+            if (rq.setTimeout) { rq.setTimeout(5000); }
             rq.write(text);
             rq.end();
-        } catch (e) { fail(e); }
+        } catch (e) { fail(e, 0); }
     }
     function drainBannerQueue() {
         // Cancel the handle that fired (or the one scheduled by the previous call). Clearing the
@@ -456,7 +488,7 @@ module.exports = function (ctx) {
         opts = opts || {};
         var body = {
             title: clean(title, 40), message: clean(message, 200), level: level, icon: icon || '',
-            mode: opts.mode || 'banner', duration: seconds, source: 'tv-alerts'
+            mode: opts.mode || 'banner', duration: seconds, source: 'tv-alerts', category: opts.category || 'sport'
         };
         if (opts.sound) {
             var snd = opts.sound;
@@ -524,6 +556,7 @@ module.exports = function (ctx) {
         else if (kind === 'score') { title = t.score; icon = E.star; }
         else { title = t.end; icon = E.flag; }
         banner(title, msg, level, icon, s, {
+            category: (kind === 'goal' || kind === 'against' || kind === 'score') ? 'goal' : 'sport',
             sound: w.sound ? (SOUND[kind] || 'chime') : '',
             group: false,
             mode: w.mode,
@@ -881,7 +914,7 @@ module.exports = function (ctx) {
         persistNextWarned();
         var msg = g.home + ' \u00D7 ' + g.away + ' \u00B7 ' + g.line;
         banner(TITLE_PRE, msg, 'info', E.whistle, w.otherSeconds,
-            { sound: w.sound ? 'reward' : '', group: false, mode: w.mode, image: w.logo || '', volume: w.volume });
+            { category: 'reminder', sound: w.sound ? 'reward' : '', group: false, mode: w.mode, image: w.logo || '', volume: w.volume });
         addLog('sport', 'next', msg);
     }
     function checkNext(ws) {
@@ -1253,7 +1286,7 @@ module.exports = function (ctx) {
         var msg = (a.message || a.type) + (a.endsAt ? ' \u00B7 at\u00E9 ' + clean(String(a.endsAt).slice(0, 16), 16) : '');
         // Civil-protection warnings are not routine: NC 0.13+ shows high priority even in quiet hours.
         banner(title, msg, level, icon, c.civ.seconds,
-            { sound: snd, group: false, mode: mode, priority: (lv === 'yellow') ? '' : 'high', volume: c.civ.volume });
+            { category: 'civil', sound: snd, group: false, mode: mode, priority: (lv === 'yellow') ? '' : 'high', volume: c.civ.volume });
         addLog('civ', lv, title + ' - ' + msg);
     }
     function pollCiv(manual) {
@@ -1446,7 +1479,7 @@ module.exports = function (ctx) {
             weatherWarned[key] = true;
             persistWeatherWarned();
             banner(E.warn + ' ' + TXT[c.lang].weatherSoon + ' \u00B7 ' + a.label, a.msg, 'warn', a.icon, w.seconds,
-                { sound: '', mode: w.mode, volume: w.volume, group: false });
+                { category: 'weather', sound: '', mode: w.mode, volume: w.volume, group: false });
             addLog('weather', 'ahead', a.msg);
         }
     }
@@ -1471,7 +1504,7 @@ module.exports = function (ctx) {
                 var short = place.name.replace(/\s*\([^)]*\)$/, '');
                 banner(wx.icon + ' ' + TXT[c.lang].weather + ' \u00B7 ' + short, wx.line,
                     (wx.rain >= 60 ? 'warn' : 'info'), wx.icon, w.seconds,
-                    { sound: w.sound ? 'soft' : '', mode: w.mode, volume: w.volume });
+                    { category: 'weather', sound: w.sound ? 'soft' : '', mode: w.mode, volume: w.volume });
                 addLog('weather', 'weather', wx.line);
             }
             schedule('weather', w.interval * 60000);
@@ -1572,7 +1605,7 @@ module.exports = function (ctx) {
     return {
         start: function () {
             running = true; stopped = false;
-            bannerQueue.length = 0; sendTimes.length = 0;
+            bannerQueue.length = 0; sendTimes.length = 0; clearRetries();
             busy = { sport: false, weather: false, news: false, civ: false };
             loadHistory();
             loadWeatherWarned();
@@ -1588,7 +1621,7 @@ module.exports = function (ctx) {
         stop: function () {
             running = false; stopped = true;
             // Nothing queued before shutdown may be delivered later.
-            bannerQueue.length = 0; sendTimes.length = 0;
+            bannerQueue.length = 0; sendTimes.length = 0; clearRetries();
             clearInterval(soundTimer); soundTimer = null;
             clearTimeout(bannerTimer); bannerTimer = null;
             Object.keys(timers).forEach(function (k) { clearTimeout(timers[k]); });
@@ -1969,7 +2002,7 @@ module.exports = function (ctx) {
                     if (!cl) { return sendJson(res, 400, { error: 'unknown test club' }); }
                     var title = 'Golo! ' + cl.name, msg = cl.msg || ('Golo do ' + cl.name);
                     banner(title, msg, cl.level, '', 8, {
-                        mode: 'overlay', theme: 'sport', image: cl.logo, group: false
+                        category: 'goal', mode: 'overlay', theme: 'sport', image: cl.logo, group: false
                     });
                     addLog('test', 'goalSim', title + ' - ' + msg);
                     sendJson(res, 200, { ok: true, title: title, message: msg });
@@ -1989,7 +2022,7 @@ module.exports = function (ctx) {
                         var msg = ng ? (ng.home + ' \u00D7 ' + ng.away + ' \u00B7 ' + ng.line) :
                             (t.team + ' \u00D7 ' + t.test + ' \u00B7 ' + t.today + ' 20:30');
                         banner(title, msg, 'info', E.whistle, c.football.otherSeconds,
-                            { sound: c.football.sound ? 'reward' : '', group: false, mode: c.football.mode,
+                            { category: 'reminder', sound: c.football.sound ? 'reward' : '', group: false, mode: c.football.mode,
                               image: logoFor('club', c.football.provider, 'soccer', club ? club.id : ''),
                               volume: c.football.volume });
                         addLog('test', 'next', msg);
