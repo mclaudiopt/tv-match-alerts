@@ -82,3 +82,7 @@ Pontos de restauro: `_backup-tv-alerts-0.4.5-*` a `_backup-tv-alerts-0.5.29-*` e
 ## 0.5.47 (2026-11-26)
 
 Sending to the Notification Center: real 5 s time limit, the answer is read, up to 3 retries (network error, 429, 5xx, failed; not 400/403), and every notification has a `category`.
+
+## 0.5.48 (2026-11-26)
+
+Night quiet (23h-07h) removed from weather and news.

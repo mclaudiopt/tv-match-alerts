@@ -247,7 +247,6 @@ table.api th { color:var(--dim); font-weight:500; }
             <label class="f" for="w-mode" data-t="mode">Mode</label>
             <select id="w-mode"></select>
             <div class="setting"><label for="w-sound" id="w-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="w-sound" aria-labelledby="w-sound-name"><span aria-hidden="true"></span></label></div>
-            <div class="setting"><label for="w-quiet" id="w-quiet-name" data-t="quiet">Quiet hours 23h-07h</label><label class="switch"><input type="checkbox" role="switch" id="w-quiet" aria-labelledby="w-quiet-name"><span aria-hidden="true"></span></label></div>
           </div>
         </div>
       </details>
@@ -367,7 +366,6 @@ table.api th { color:var(--dim); font-weight:500; }
           <label class="f" for="n-mode" data-t="mode">Mode</label>
           <select id="n-mode"></select>
           <div class="setting"><label for="n-sound" id="n-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="n-sound" aria-labelledby="n-sound-name"><span aria-hidden="true"></span></label></div>
-          <div class="setting"><label for="n-quiet" id="n-quiet-name" data-t="quiet">Quiet hours 23h-07h</label><label class="switch"><input type="checkbox" role="switch" id="n-quiet" aria-labelledby="n-quiet-name"><span aria-hidden="true"></span></label></div>
         </div>
         </div>
       </details>
@@ -647,7 +645,7 @@ table.api th { color:var(--dim); font-weight:500; }
       tabSetup:"SETUP", tabSport:"Sport", techApi:"API and examples", diagTitle:"Diagnostics", diagWatches:"Watched", diagLog:"Log", diagHealth:"Providers", clearLog:"Clear log", confirmClear:"Click again: clear log", noAnswer:"No answer from the Shard: open the panel again", tabWeather:"Weather", tabNews:"News", tabFootball:"Football", tabOthers:"Other sports", tabTech:"Technical",
       modules:"Modules", sport:"Sport", weather:"Weather", news:"News", now:"Right now",
       weatherCard:"Weather", place:"Place", interval:"Interval (min)", seconds:"Banner (s)", mode:"Mode",
-      quiet:"Quiet hours 23h-07h", style:"Style", sound:"Sound", test:"Test", save:"Save", savekey:"Save key",
+      style:"Style", sound:"Sound", test:"Test", save:"Save", savekey:"Save key",
       checkkey:"Check key", check:"Check now", sources:"News sources",
       sourcesNote:"Pick as many as you like. Each source keeps its own history.",
 
@@ -702,7 +700,7 @@ table.api th { color:var(--dim); font-weight:500; }
       tabSetup:"SETUP", tabSport:"Desporto", techApi:"API e exemplos", diagTitle:"Diagn\u00F3stico", diagWatches:"Acompanhados", diagLog:"Registo", diagHealth:"Fornecedores", clearLog:"Limpar registo", confirmClear:"Clique outra vez: limpar registo", noAnswer:"Sem resposta do Shard: abra o painel novamente", tabWeather:"Tempo", tabNews:"Not\u00EDcias", tabFootball:"Futebol", tabOthers:"Outros desportos", tabTech:"T\u00E9cnico",
       modules:"M\u00F3dulos", sport:"Desporto", weather:"Tempo", news:"Not\u00EDcias", now:"Agora",
       weatherCard:"Tempo", place:"Local", interval:"Intervalo (min)", seconds:"Banner (s)", mode:"Modo",
-      quiet:"Sil\u00EAncio 23h-07h", style:"Estilo", sound:"Som", test:"Teste", save:"Guardar", savekey:"Guardar chave",
+      style:"Estilo", sound:"Som", test:"Teste", save:"Guardar", savekey:"Guardar chave",
       checkkey:"Testar chave", check:"Verificar agora", sources:"Fontes de not\u00EDcias",
       sourcesNote:"Escolha as que quiser. Cada fonte guarda o seu hist\u00F3rico.",
 
@@ -1060,12 +1058,12 @@ table.api th { color:var(--dim); font-weight:500; }
     $("place-results").innerHTML = "";
     $("place-results").className = "hidden";
     range("w-interval", c.weather.interval); range("w-seconds", c.weather.seconds); range("w-volume", c.weather.volume);
-    $("w-quiet").checked = !!c.weather.quiet; $("w-sound").checked = !!c.weather.sound;
+    $("w-sound").checked = !!c.weather.sound;
     fillMode($("w-mode"), c.weather.mode);
 
     range("n-interval", c.news.interval); range("n-seconds", c.news.seconds); range("n-volume", c.news.volume);
     $("n-count").value = String(c.news.count);
-    $("n-quiet").checked = !!c.news.quiet; $("n-sound").checked = !!c.news.sound;
+    $("n-sound").checked = !!c.news.sound;
     fillMode($("n-mode"), c.news.mode);
 
     fillSel($("f-provider"), c.providers, c.football.provider);
@@ -1173,7 +1171,7 @@ table.api th { color:var(--dim); font-weight:500; }
         place: $("w-place").value, custom: ((cfg && cfg.weather && cfg.weather.custom) || []).slice(0),
         provider: $("w-provider").value, when: $("w-when").value,
         interval: parseInt($("w-interval").value, 10), seconds: parseInt($("w-seconds").value, 10),
-        quiet: $("w-quiet").checked, sound: $("w-sound").checked, mode: $("w-mode").value,
+        sound: $("w-sound").checked, mode: $("w-mode").value,
         volume: parseInt($("w-volume").value, 10),
         proactive: {
           enabled: $("wp-enabled").checked, minutes: parseInt($("wp-minutes").value, 10),
@@ -1185,7 +1183,7 @@ table.api th { color:var(--dim); font-weight:500; }
       },
       news: {
         feeds: feeds.slice(0), interval: parseInt($("n-interval").value, 10), seconds: parseInt($("n-seconds").value, 10),
-        count: parseInt($("n-count").value, 10), quiet: $("n-quiet").checked, sound: $("n-sound").checked, mode: $("n-mode").value,
+        count: parseInt($("n-count").value, 10), sound: $("n-sound").checked, mode: $("n-mode").value,
         volume: parseInt($("n-volume").value, 10)
       },
       football: {

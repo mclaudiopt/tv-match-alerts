@@ -160,17 +160,17 @@ var DEFAULTS = {
             { id: '142', name: 'Feyenoord', level: 'alert', msg: 'Porto 0-1 Feyenoord' }
         ]
     },
-    weather: { place: 'lisbon', custom: [], provider: 'openmeteo', when: 'always', interval: 60, seconds: 12, quiet: true, sound: false, mode: 'banner', volume: 100,
+    weather: { place: 'lisbon', custom: [], provider: 'openmeteo', when: 'always', interval: 60, seconds: 12, sound: false, mode: 'banner', volume: 100,
         proactive: { enabled: true, minutes: 120, rain: true, wind: true, heat: true, storm: true,
             rainPct: 60, windKmh: 50, heatC: 35, stormCode: 95 } },
-    news: { feeds: ['gnewspt'], interval: 30, seconds: 12, quiet: true, count: 1, sound: false, mode: 'banner', volume: 100 },
+    news: { feeds: ['gnewspt'], interval: 30, seconds: 12, count: 1, sound: false, mode: 'banner', volume: 100 },
     lang: 'en'
 };
 var TXT = {
     en: {
         goal: 'GOAL', against: 'Goal for ', cardY: 'Yellow card', cardR: 'Red card', sub: 'Substitution',
         varNo: 'Goal disallowed', penalty: 'Penalty awarded', penMiss: 'Penalty missed', start: 'Kick-off', half: 'Half-time', end: 'Full time', score: 'Score update',
-        test: 'Test', weather: 'Weather', news: 'News', quiet: 'Quiet hours', rain: 'Rain',
+        test: 'Test', weather: 'Weather', news: 'News', rain: 'Rain',
         win: 'WIN', lose: 'LOSS', team: 'Team', clubNews: 'Club news', soon: TITLE_PRE,
         today: 'today', tomorrow: 'tomorrow', weatherSoon: 'Weather ahead',
         wRain: 'Rain', wWind: 'Wind', wHeat: 'Heat', wStorm: 'Thunderstorm'
@@ -179,7 +179,7 @@ var TXT = {
         goal: 'GOLO', against: 'Golo do ', cardY: 'Cart\u00E3o amarelo', cardR: 'Cart\u00E3o vermelho',
         sub: 'Substitui\u00E7\u00E3o', varNo: 'Golo anulado', penalty: 'Penalty marcado', penMiss: 'Penalty falhado', start: 'Come\u00E7ou o jogo', half: 'Intervalo',
         end: 'Fim do jogo', score: 'Resultado atualizado', test: 'Teste', weather: 'Tempo', news: 'Not\u00EDcias',
-        quiet: 'Hor\u00E1rio de sil\u00EAncio', rain: 'Chuva', win: 'VIT\u00D3RIA', lose: 'DERROTA', team: 'Equipa',
+        rain: 'Chuva', win: 'VIT\u00D3RIA', lose: 'DERROTA', team: 'Equipa',
         clubNews: 'Not\u00EDcias do clube', soon: TITLE_PRE,
         today: 'hoje', tomorrow: 'amanh\u00E3', weatherSoon: 'Tempo a caminho',
         wRain: 'Chuva', wWind: 'Vento', wHeat: 'Calor', wStorm: 'Trovoada'
@@ -230,7 +230,7 @@ module.exports = function (ctx) {
     var newsApi = require('./news')({
         getUrl: getUrl, clean: clean, stripTags: stripTags, byId: byId,
         FEEDS: FEEDS, GN: GN, MAX_FEEDS: MAX_FEEDS, MAX_CLUBS: MAX_CLUBS,
-        quietNow: quietNow, TXT: TXT, E: E, banner: banner, addLog: addLog,
+        TXT: TXT, E: E, banner: banner, addLog: addLog,
         cfg: cfg, status: status, schedule: schedule, persistHistory: persistHistory,
         isRunning: function () { return running && !stopped; }
     });
@@ -315,7 +315,6 @@ module.exports = function (ctx) {
         return decodeEnt(String(s == null ? '' : s).replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
             .replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
     }
-    function quietNow() { var h = new Date().getHours(); return h >= 23 || h < 7; }
     // One banner per event, even when both clubs of the match are followed.
     function once(key) {
         var now = Date.now();
@@ -741,7 +740,6 @@ module.exports = function (ctx) {
         o.weather.place = byId(allPlaces(o), w.place) ? w.place : d.weather.place;
         o.weather.interval = clamp(w.interval, 5, 240, d.weather.interval);
         o.weather.seconds = clamp(w.seconds, 3, 30, d.weather.seconds);
-        o.weather.quiet = !(w.quiet === false);
         o.weather.sound = w.sound === true;
         o.weather.mode = byId(MODES, w.mode) ? w.mode : d.weather.mode;
         o.weather.volume = clamp(w.volume, 10, 100, d.weather.volume);
@@ -767,7 +765,6 @@ module.exports = function (ctx) {
         if (!o.news.feeds.length) { o.news.feeds = d.news.feeds.slice(0); }
         o.news.interval = clamp(n.interval, 5, 240, d.news.interval);
         o.news.seconds = clamp(n.seconds, 3, 30, d.news.seconds);
-        o.news.quiet = !(n.quiet === false);
         o.news.count = clamp(n.count, 1, 3, d.news.count);
         o.news.sound = n.sound === true;
         o.news.mode = byId(MODES, n.mode) ? n.mode : d.news.mode;
@@ -1441,7 +1438,7 @@ module.exports = function (ctx) {
         var p = w.proactive;
         if (!p || !p.enabled || !raw || !raw.hourly) { return; }
         // Advance warnings obey the same "when to notify" window as the regular weather banner.
-        if (skip || (!manual && w.quiet && quietNow())) { return; }
+        if (skip) { return; }
         var h = raw.hourly, times = h.time || [], i, t, now = Date.now(), end = now + p.minutes * 60000;
         var found = {}, order = [];
         function add(kind, label, msg, icon, at, slot, severity) {
@@ -1497,7 +1494,6 @@ module.exports = function (ctx) {
             status.weather.error = ''; status.weather.line = wx.line; status.weather.state = wx.state;
             checkProactive(raw, place, c, w, manual, skip);
             if (skip) { addLog('weather', 'skip', w.when + ': ' + wx.line); }
-            else if (!manual && w.quiet && quietNow()) { addLog('weather', 'quiet', wx.line); }
             else {
                 // NC limits the title to 40 characters: drop the region a custom place carries in
                 // its name, keep the full name in the message line.
@@ -1921,7 +1917,6 @@ module.exports = function (ctx) {
                     }
                     if (we.interval !== undefined) { c.weather.interval = clamp(we.interval, 5, 240, c.weather.interval); }
                     if (we.seconds !== undefined) { c.weather.seconds = clamp(we.seconds, 3, 30, c.weather.seconds); }
-                    if (typeof we.quiet === 'boolean') { c.weather.quiet = we.quiet; }
                     if (typeof we.sound === 'boolean') { c.weather.sound = we.sound; }
                     if (we.mode !== undefined) { if (byId(MODES, we.mode)) { c.weather.mode = we.mode; } }
                     if (we.volume !== undefined) { c.weather.volume = clamp(we.volume, 10, 100, c.weather.volume); }
@@ -1959,7 +1954,6 @@ module.exports = function (ctx) {
                     }
                     if (ne.interval !== undefined) { c.news.interval = clamp(ne.interval, 5, 240, c.news.interval); }
                     if (ne.seconds !== undefined) { c.news.seconds = clamp(ne.seconds, 3, 30, c.news.seconds); }
-                    if (typeof ne.quiet === 'boolean') { c.news.quiet = ne.quiet; }
                     if (ne.count !== undefined) { c.news.count = clamp(ne.count, 1, 3, c.news.count); }
                     if (typeof ne.sound === 'boolean') { c.news.sound = ne.sound; }
                     if (ne.mode !== undefined) { if (byId(MODES, ne.mode)) { c.news.mode = ne.mode; } }
