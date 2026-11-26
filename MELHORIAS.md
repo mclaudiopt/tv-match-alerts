@@ -1,6 +1,6 @@
 # TV alerts — bugs, correções e melhorias
 
-Estado: código em **0.5.44**; TVs .7, .3 e .23 em 0.5.41 até à próxima instalação; Notification Center .7 **0.16.0**, .3 **0.17.1**, .23 **0.3.1**. Nome oficial do Shard: **NEWS** (id `match-alerts`). Por decisão do Marcelo, **não implementar** a chave API-Football (P1-5) nem a deduplicação de notícias (B5). ESPN é o fornecedor a usar. As três melhorias pedidas na última sessão estão feitas e fechadas abaixo; não há outras ideias em aberto.
+Estado: código em **0.5.46**; TVs .7, .3 e .23 em 0.5.41 até à próxima instalação; Notification Center .7 **0.16.0**, .3 **0.17.1**, .23 **0.3.1**. Nome oficial do Shard: **NEWS** (id `match-alerts`). Por decisão do Marcelo, **não implementar** a chave API-Football (P1-5) nem a deduplicação de notícias (B5). ESPN é o fornecedor a usar. As três melhorias pedidas na última sessão estão feitas e fechadas abaixo; não há outras ideias em aberto.
 
 ---
 
@@ -55,6 +55,8 @@ Antes, dois picks com o mesmo desporto colidiam: a rota de config dedupava por `
 | 0.5.42 | Todos os 41 checkboxes substituídos por toggles no estilo do Vetro (pill, botão deslizante, estado On/Off sincronizado). |
 | 0.5.43 | Módulos no SETUP distribuídos em colunas horizontais (`.modgrid`) em vez de lista vertical. |
 | 0.5.44 | Ordem dos separadores alinhada com a dos módulos: SETUP, Desporto, Tempo, Notícias, Técnico. |
+| 0.5.45 | Cartão «Agora» (linhas de estado e Verificar agora) movido de SETUP para Técnico. |
+| 0.5.46 | Interface conforme `VETRO-UI-SHARDS.md`: tokens escuros do Vetro, todos os controlos em `.setting` com interruptor On/Off (Ligado/Desligado em PT), sem checkboxes; separadores com linha inferior, cartões/botões/campos com as medidas do Vetro. |
 | 0.5.41 | Nome oficial **NEWS**; PR 42 actualizado com a clarificação NC 0.3.1 vs 0.8.0+; `check-nc.ps1` com snapshot por TV; `build.ps1 -Install` multi-TV; Tempo com duas colunas (meteorologia | Proteção Civil) e Desporto com sub-tabs Futebol / Outros desportos.
 | 0.5.40 | Penalties: `Penalty - Saved` / `Penalty - Missed` da ESPN (sem golo) passam a anunciar "Penalty falhado" com o nome do marcador; `Penalty Awarded` anuncia "Penalty marcado"; penalty convertido continua a ser golo. Dois interruptores novos no separador Futebol, ligados por omissão. Teste `tests/test_penalty.js` (23 testes). NC 0.14.1 (só tema `estadio`, sem campos novos no notify). |
 | várias | Vários clubes e competições, várias fontes, vários desportos, scoreboard só do clube escolhido, overlay, migração de configs antigas. |
