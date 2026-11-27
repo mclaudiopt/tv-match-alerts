@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,7 +10,8 @@
 :root { color-scheme:dark;
   --bg:#080f23; --surface:#101c35; --raised:#192943; --text:#f5f8ff; --muted:#aab8d1;
   --border:#344360; --control:#7183a2; --action:#123bb5; --action-hover:#0e3095;
-  --accent:#8fbaff; --ok:#7fcba0; --warn:#e2b867; --danger:#ef8a80;
+  --accent:#8fbaff; --accent-soft:rgba(143,186,255,.14); --accent-line:rgba(143,186,255,.4);
+  --ok:#7fcba0; --warn:#e2b867; --danger:#ef8a80;
   --r:8px; --r-surface:16px; --pill:999px; --fast:120ms; --ease:cubic-bezier(.2,0,0,1);
   --font:-apple-system,"Segoe UI",Roboto,sans-serif;
   --mono:ui-monospace,SFMono-Regular,Consolas,monospace;
@@ -22,12 +23,20 @@
 body { margin:0 auto; max-width:1040px; padding:20px 16px 40px; background:var(--bg); color:var(--text); font:14px/1.45 var(--font); }
 :focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 [hidden] { display:none !important; }
-.head { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
-.logo { width:34px; height:34px; border-radius:9px; background:var(--card); display:flex; align-items:center; justify-content:center; font-size:19px; }
-h1 { font-size:19px; margin:0; flex:1; font-weight:600; }
-.ver { font-size:12px; font-weight:600; color:var(--dim); background:var(--card); border:1px solid var(--line); border-radius:12px; padding:2px 8px; }
-.lang button { background:var(--card); color:var(--dim); border:1px solid var(--line); border-radius:8px; padding:5px 9px; margin-left:5px; cursor:pointer; font-size:12px; }
-.lang button.on { color:#fff; border-color:var(--accent); }
+.head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; min-height:50px; }
+.head-id { display:flex; align-items:center; gap:12px; min-width:0; }
+.logo { width:44px; height:44px; border-radius:10px; background:var(--card); display:flex; align-items:center; justify-content:center; font-size:22px; flex:none; }
+.head-text { min-width:0; }
+h1 { font-size:20px; margin:0; font-weight:500; line-height:1.2; }
+.head-lead { font-size:14px; color:var(--muted); line-height:1.3; }
+.chips { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:nowrap; min-width:0; }
+.ver { font-size:12px; }
+.chip.plain { font-weight:600; color:var(--dim); }
+.chip.plain::before { display:none; }
+.lang { display:flex; flex:none; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:var(--surface); }
+.lang button { background:none; color:var(--muted); border:0; border-radius:0; min-height:36px; padding:6px 12px; cursor:pointer; font-size:12px; font-weight:500; }
+.lang button + button { border-left:1px solid var(--border); }
+.lang button.on { color:var(--accent); background:var(--accent-soft); }
 .tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; position:sticky; top:0; z-index:10; background:var(--bg); padding:6px 0; border-bottom:1px solid var(--border); }
 .tabs button { background:none; color:var(--muted); border:0; border-bottom:2px solid transparent; border-radius:0; min-height:44px; padding:8px 14px; cursor:pointer; font-size:14px; font-weight:500; }
 .tabs button.on { color:var(--text); border-bottom-color:var(--accent); }
@@ -41,6 +50,14 @@ h1 { font-size:19px; margin:0; flex:1; font-weight:600; }
 .subtabs button.on { color:var(--text); border-color:var(--action); background:var(--surface); }
 .subtab { display:none; }
 .subtab.on { display:block; }
+.worktabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; border-bottom:1px solid var(--border); }
+.worktabs button { background:none; color:var(--muted); border:0; border-bottom:2px solid transparent; border-radius:0; min-height:44px; padding:8px 14px; cursor:pointer; font-size:14px; font-weight:500; }
+.worktabs button.on { color:var(--text); border-bottom-color:var(--accent); }
+.subsubtabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+.subsubtabs button { background:var(--raised); color:var(--muted); border:1px solid var(--border); border-radius:var(--r); padding:7px 12px; cursor:pointer; font-size:12px; font-weight:600; }
+.subsubtabs button.on { color:var(--text); border-color:var(--action); background:var(--surface); }
+.subsubtab { display:none; }
+.subsubtab.on { display:block; }
 .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-surface); padding:12px 14px; }
 .card.wide { grid-column:1/-1; }
 h2 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--dim); margin:0 0 10px; font-weight:700; }
@@ -63,7 +80,7 @@ html[lang=pt] .switch input:checked + span::after { content:"Ligado"; }
 @media (forced-colors:active) { .switch input { appearance:auto; -webkit-appearance:auto; } .switch input::before { display:none; } }
 .modgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px 14px; margin-top:10px; }
 .modgrid .setting { margin:0; }
-select, input[type=text], input[type=password] { width:100%; background:var(--raised); color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:8px 9px; font-size:13px; }
+select, input[type=text], input[type=password], textarea { width:100%; background:var(--raised); color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:8px 9px; font-size:13px; }
 input[type=range] { width:100%; accent-color:var(--accent); }
 .dur input[type=number] { flex:1; min-width:70px; background:var(--raised); color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:6px 8px; }
 .dur { display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; color:var(--dim); }
@@ -113,6 +130,7 @@ pre { white-space:pre-wrap; word-break:break-word; margin:0; font:11px/1.5 var(-
 /* VETRO-UI-SHARDS.md 0.19.0: preview on the left, one card per group, state chips, toast and drawer. */
 .lead { color:var(--dim); font-size:13px; margin:2px 0 12px; }
 .layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.9fr); gap:12px; align-items:start; }
+.systemcols { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:12px; align-items:start; }
 .stage { display:flex; flex-direction:column; gap:12px; min-width:0; }
 .stage .panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-surface); padding:14px; min-width:0; }
 .stage .panel h2 { display:flex; align-items:center; gap:12px; font-size:18px; color:var(--text); text-transform:none; letter-spacing:0; font-weight:500; margin:0 0 10px; }
@@ -156,64 +174,42 @@ table.api { width:100%; border-collapse:collapse; font-size:13px; }
 table.api td, table.api th { padding:6px 10px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
 table.api tr:last-child td { border-bottom:0; }
 table.api th { color:var(--dim); font-weight:500; }
-@media (max-width:1000px) { .layout { grid-template-columns:minmax(0,1fr); } .stage { position:static; } }
+@media (max-width:1000px) { .layout, .systemcols { grid-template-columns:minmax(0,1fr); } .stage { position:static; } }
 @media (min-width:1001px) { .stage { position:sticky; top:64px; } }
+@media (max-width:620px) { .head { flex-wrap:wrap; } .head-id { flex:1; } .head-lead { display:none; } .lang { order:2; } .chips { order:3; flex-basis:100%; justify-content:flex-start; flex-wrap:wrap; } }
 </style>
 </head>
 <body>
 <div class="head">
-  <div class="logo">&#9917;</div>
-  <h1 data-t="title">NEWS</h1>
-  <span class="ver" id="ver"></span>
-  <span class="msg" id="save-state" aria-live="polite"></span>
-  <button type="button" class="g" id="test-all" data-t="testAll">Test all</button>
-  <button type="button" class="p" id="save-all" data-t="saveAll">Save all</button>
-  <div class="lang" role="group" aria-label="Language"><button type="button" id="l-en" aria-label="English">EN</button><button type="button" id="l-pt" aria-label="Portugu&#234;s">PT</button></div>
+  <div class="head-id">
+    <div class="logo">&#9917;</div>
+    <div class="head-text"><h1 data-t="title">NEWS</h1><div class="head-lead" data-t="lead">Alerts on the TV, sent through the Notification Center.</div></div>
+  </div>
+  <div class="chips" aria-label="Status">
+    <span class="chip" id="chip-now"></span>
+    <span class="chip" id="chip-deps"></span>
+    <span class="chip" id="chip-link"></span>
+    <span class="ver chip plain" id="ver"></span>
+  </div>
+  <div class="lang" role="group" aria-label="Language"><button type="button" id="l-en" aria-pressed="true" aria-label="English">EN</button><button type="button" id="l-pt" aria-pressed="false" aria-label="Portugu&#234;s">PT</button></div>
 </div>
-<p class="lead" data-t="lead">Alerts on the TV, sent through the Notification Center.</p>
 
 <div class="tabs" role="tablist" aria-label="Sections">
-  <button type="button" id="tabbtn-setup" role="tab" aria-selected="true" aria-controls="tab-setup" data-tab="setup" class="on" data-t="tabSetup">SETUP</button>
-  <button type="button" id="tabbtn-sport" role="tab" aria-selected="false" aria-controls="tab-sport" data-tab="sport" data-t="tabSport">Sport</button>
-  <button type="button" id="tabbtn-weather" role="tab" aria-selected="false" aria-controls="tab-weather" data-tab="weather" data-t="tabWeather">Weather</button>
-  <button type="button" id="tabbtn-news" role="tab" aria-selected="false" aria-controls="tab-news" data-tab="news" data-t="tabNews">News</button>
-  <button type="button" id="tabbtn-tech" role="tab" aria-selected="false" aria-controls="tab-tech" data-tab="tech" data-t="tabTech">Technical</button>
+  <button type="button" id="tabbtn-work" role="tab" aria-selected="true" aria-controls="tab-work" data-tab="work" class="on" data-t="tabWork">Work</button>
+  <button type="button" id="tabbtn-setup" role="tab" aria-selected="false" aria-controls="tab-setup" data-tab="settings" data-t="tabSettings">Settings</button>
+  <button type="button" id="tabbtn-tech" role="tab" aria-selected="false" aria-controls="tab-tech" data-tab="system" data-t="tabSystem">System</button>
 </div>
 
-<!-- ============ GENERAL ============ -->
-<div class="tab on" id="tab-setup" role="tabpanel" aria-labelledby="tabbtn-setup">
-  <div class="layout">
-  <div class="stage">
-    <section class="panel">
-      <h2><svg class="section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg><span data-t="preview">Preview</span></h2>
-      <div class="preview-card"><span class="preview-kicker" data-t="onTv">On the TV</span><b data-t="title">NEWS</b>
-        <p data-t="previewSetup">Each module sends its own alerts through the Notification Center.</p>
-        <div><span class="chip" id="pv-mod-sport">Sport</span><span class="chip" id="pv-mod-weather">Weather</span><span class="chip" id="pv-mod-news">News</span></div>
-      </div>
-      <details class="help"><summary data-t="previewHelp">What changes on the TV</summary><p data-t="previewHelpSetup">Only the modules switched on here can show banners. Nothing is drawn by this panel.</p></details>
-    </section>
+<!-- ============ WORK: Sport / Weather / News ============ -->
+<div class="tab on" id="tab-work" role="tabpanel" aria-labelledby="tabbtn-work">
+  <div class="worktabs" role="tablist" aria-label="Work">
+    <button type="button" id="tabbtn-sport" role="tab" aria-selected="true" aria-controls="tab-sport" data-subtab="sport" data-t="tabSport" class="on">Sport</button>
+    <button type="button" id="tabbtn-weather" role="tab" aria-selected="false" aria-controls="tab-weather" data-subtab="weather" data-t="tabWeather">Weather</button>
+    <button type="button" id="tabbtn-news" role="tab" aria-selected="false" aria-controls="tab-news" data-subtab="news" data-t="tabNews">News</button>
   </div>
-  <div class="stack">
-    <div class="card wide">
-      <details class="sec" open>
-        <summary data-t="modules">Modules</summary>
-        <div class="modgrid">
-          <div class="setting"><label for="m-sport" id="m-sport-name" data-t="sport">Sport</label><label class="switch"><input type="checkbox" role="switch" id="m-sport" aria-labelledby="m-sport-name"><span aria-hidden="true"></span></label></div>
-          <div class="setting"><label for="m-weather" id="m-weather-name" data-t="weather">Weather</label><label class="switch"><input type="checkbox" role="switch" id="m-weather" aria-labelledby="m-weather-name"><span aria-hidden="true"></span></label></div>
-          <div class="setting"><label for="m-news" id="m-news-name" data-t="news">News</label><label class="switch"><input type="checkbox" role="switch" id="m-news" aria-labelledby="m-news-name"><span aria-hidden="true"></span></label></div>
-          <div class="setting"><label for="m-civ" id="m-civ-name" data-t="tabCiv">Prote&ccedil;&atilde;o Civil</label><label class="switch"><input type="checkbox" role="switch" id="m-civ" aria-labelledby="m-civ-name"><span aria-hidden="true"></span></label></div>
-        </div>
-      </details>
-    </div>
-    <div class="card wide">
-        <div class="row"><button type="button" class="p" id="save-mod" data-t="save">Save</button></div>
-    </div>
-  </div>
-  </div>
-</div>
 
 <!-- ============ WEATHER ============ -->
-<div class="tab" id="tab-weather" role="tabpanel" aria-labelledby="tabbtn-weather" hidden>
+<div class="subtab" id="tab-weather" role="tabpanel" aria-labelledby="tabbtn-weather" hidden>
   <div class="layout">
   <div class="stage">
     <section class="panel">
@@ -223,7 +219,7 @@ table.api th { color:var(--dim); font-weight:500; }
         <p data-t="previewWeather">The next weather alert will look like this.</p>
         <div><span class="chip" id="pv-w-mode">banner</span><span class="chip" id="pv-w-proactive">-</span></div>
       </div>
-      <details class="help"><summary data-t="previewHelp">What changes on the TV</summary><p data-t="previewHelpWeather">Mode, sound, volume and the place chosen below are used by every weather banner.</p></details>
+      <details class="help"><summary data-t="previewHelp">What changes on the TV</summary><p data-t="previewHelpWeather">The place and interval chosen here are used by every weather banner; style is in Settings.</p></details>
     </section>
   </div>
   <div class="appcols">
@@ -240,13 +236,9 @@ table.api th { color:var(--dim); font-weight:500; }
             <label class="f" for="w-when" data-t="weatherWhen">When to notify</label>
             <select id="w-when"></select>
             <div class="dur"><label for="w-interval" data-t="interval">Interval (min)</label><input type="range" id="w-interval" min="5" max="240" step="5"><b id="w-intervalv"></b></div>
-            <div class="dur"><label for="w-seconds" data-t="seconds">Banner (s)</label><input type="range" id="w-seconds" min="3" max="30"><b id="w-secondsv"></b></div>
-            <div class="dur"><label for="w-volume" data-t="volume">Volume</label><input type="range" id="w-volume" min="10" max="100" step="5"><b id="w-volumev"></b></div>
           </div>
           <div>
-            <label class="f" for="w-mode" data-t="mode">Mode</label>
-            <select id="w-mode"></select>
-            <div class="setting"><label for="w-sound" id="w-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="w-sound" aria-labelledby="w-sound-name"><span aria-hidden="true"></span></label></div>
+            <div class="small" data-t="styleInSettings">Banner style, sound and volume are in Settings.</div>
           </div>
         </div>
       </details>
@@ -312,13 +304,9 @@ table.api th { color:var(--dim); font-weight:500; }
     </div>
     <div class="card wide">
       <details class="sec" open>
-        <summary data-t="style">Style</summary>
-        <label class="f" for="civ-mode" data-t="mode">Mode</label>
-        <select id="civ-mode"></select>
-        <div class="setting"><label for="civ-sound" id="civ-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="civ-sound" aria-labelledby="civ-sound-name"><span aria-hidden="true"></span></label></div>
+        <summary data-t="interval">Interval</summary>
         <div class="dur"><label for="civ-interval" data-t="interval">Interval (min)</label><input type="range" id="civ-interval" min="5" max="240" step="5"><b id="civ-intervalv"></b></div>
-        <div class="dur"><label for="civ-seconds" data-t="seconds">Banner (s)</label><input type="range" id="civ-seconds" min="3" max="60"><b id="civ-secondsv"></b></div>
-        <div class="dur"><label for="civ-volume" data-t="volume">Volume</label><input type="range" id="civ-volume" min="10" max="100" step="5"><b id="civ-volumev"></b></div>
+        <div class="small" data-t="styleInSettings">Banner style, sound and volume are in Settings.</div>
       </details>
     </div>
     <div class="card wide">
@@ -330,7 +318,7 @@ table.api th { color:var(--dim); font-weight:500; }
 </div>
 
 <!-- ============ NEWS ============ -->
-<div class="tab" id="tab-news" role="tabpanel" aria-labelledby="tabbtn-news" hidden>
+<div class="subtab" id="tab-news" role="tabpanel" aria-labelledby="tabbtn-news" hidden>
   <div class="layout">
   <div class="stage">
     <section class="panel">
@@ -357,15 +345,11 @@ table.api th { color:var(--dim); font-weight:500; }
         <div class="grid">
         <div>
           <div class="dur"><label for="n-interval" data-t="interval">Interval (min)</label><input type="range" id="n-interval" min="5" max="240" step="5"><b id="n-intervalv"></b></div>
-          <div class="dur"><label for="n-seconds" data-t="seconds">Banner (s)</label><input type="range" id="n-seconds" min="3" max="30"><b id="n-secondsv"></b></div>
-          <div class="dur"><label for="n-volume" data-t="volume">Volume</label><input type="range" id="n-volume" min="10" max="100" step="5"><b id="n-volumev"></b></div>
           <label class="f" for="n-count" data-t="headlines">Headlines per source</label>
           <select id="n-count"><option>1</option><option>2</option><option>3</option></select>
         </div>
         <div>
-          <label class="f" for="n-mode" data-t="mode">Mode</label>
-          <select id="n-mode"></select>
-          <div class="setting"><label for="n-sound" id="n-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="n-sound" aria-labelledby="n-sound-name"><span aria-hidden="true"></span></label></div>
+          <div class="small" data-t="styleInSettings">Banner style, sound and volume are in Settings.</div>
         </div>
         </div>
       </details>
@@ -378,12 +362,12 @@ table.api th { color:var(--dim); font-weight:500; }
 </div>
 
 <!-- ============ FOOTBALL ============ -->
-<div class="tab" id="tab-sport" role="tabpanel" aria-labelledby="tabbtn-sport" hidden>
-  <div class="subtabs" role="tablist" aria-label="Sport sections">
+<div class="subtab on" id="tab-sport" role="tabpanel" aria-labelledby="tabbtn-sport">
+  <div class="subsubtabs" role="tablist" aria-label="Sport sections">
     <button type="button" id="subbtn-football" role="tab" aria-selected="true" aria-controls="subtab-football" data-subtab="football" data-t="tabFootball">Football</button>
     <button type="button" id="subbtn-others" role="tab" aria-selected="false" aria-controls="subtab-others" data-subtab="others" data-t="tabOthers">Other sports</button>
   </div>
-  <div class="subtab on" id="subtab-football">
+  <div class="subsubtab on" id="subtab-football">
   <div class="layout">
   <div class="stage">
     <section class="panel">
@@ -432,16 +416,11 @@ table.api th { color:var(--dim); font-weight:500; }
     </div>
     <div class="card wide">
       <details class="sec" open>
-        <summary data-t="style">Style</summary>
-        <label class="f" for="f-mode" data-t="mode">Mode</label>
-        <select id="f-mode"></select>
-        <div class="setting"><label for="f-sound" id="f-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="f-sound" aria-labelledby="f-sound-name"><span aria-hidden="true"></span></label></div>
-        <div class="dur"><label for="f-goalsec" data-t="goalsec">Goal banner (s)</label><input type="range" id="f-goalsec" min="5" max="60"><b id="f-goalsecv"></b></div>
-        <div class="dur"><label for="f-othersec" data-t="othersec">Other banners (s)</label><input type="range" id="f-othersec" min="3" max="30"><b id="f-othersecv"></b></div>
-        <div class="dur"><label for="f-volume" data-t="volume">Volume</label><input type="range" id="f-volume" min="10" max="100" step="5"><b id="f-volumev"></b></div>
+        <summary data-t="nextWarn">Warn before kick-off</summary>
         <div class="setting"><label for="f-next-enabled" id="f-next-enabled-name" data-t="nextWarn">Warn before kick-off</label><label class="switch"><input type="checkbox" role="switch" id="f-next-enabled" aria-labelledby="f-next-enabled-name"><span aria-hidden="true"></span></label></div>
         <label class="f" for="f-next-minutes" data-t="minutesBefore">Minutes before</label>
         <select id="f-next-minutes"><option value="0">0</option><option value="15">15</option><option value="30">30</option><option value="60">60</option></select>
+        <div class="small" data-t="styleInSettings">Banner style, sound and volume are in Settings.</div>
       </details>
       <details class="sec">
         <summary data-t="provider">Provider</summary>
@@ -501,7 +480,7 @@ table.api th { color:var(--dim); font-weight:500; }
 </div>
 
 <!-- ============ OTHER SPORTS ============ -->
-<div class="subtab" id="subtab-others" hidden>
+<div class="subsubtab" id="subtab-others" hidden>
   <div class="layout">
   <div class="stage">
     <section class="panel">
@@ -542,16 +521,7 @@ table.api th { color:var(--dim); font-weight:500; }
       </details>
     </div>
     <div class="card wide">
-      <details class="sec" open>
-        <summary data-t="style">Style</summary>
-        <label class="f" for="o-mode" data-t="mode">Mode</label>
-        <select id="o-mode"></select>
-        <div class="setting"><label for="o-sound" id="o-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="o-sound" aria-labelledby="o-sound-name"><span aria-hidden="true"></span></label></div>
-        <div class="dur"><label for="o-seconds" data-t="seconds">Banner (s)</label><input type="range" id="o-seconds" min="3" max="30"><b id="o-secondsv"></b></div>
-        <div class="dur"><label for="o-volume" data-t="volume">Volume</label><input type="range" id="o-volume" min="10" max="100" step="5"><b id="o-volumev"></b></div>
-      </details>
-    </div>
-    <div class="card wide">
+      <div class="small" data-t="styleInSettings">Banner style, sound and volume are in Settings.</div>
       <div class="row"><button type="button" class="p" id="save-others" data-t="save">Save</button><button type="button" class="g" id="t-score" data-t="testscore">Test: score</button></div>
     </div>
   </div>
@@ -559,29 +529,138 @@ table.api th { color:var(--dim); font-weight:500; }
 </div>
 </div>
 
-<!-- ============ TECHNICAL ============ -->
-<div class="tab" id="tab-tech" role="tabpanel" aria-labelledby="tabbtn-tech" hidden>
-  <div class="layout">
-  <div class="stage">
-    <section class="panel">
-      <h2><svg class="section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span data-t="now">Right now</span></h2>
-      <div class="preview-card"><span class="preview-kicker" data-t="onTv">On the TV</span>
-        <div class="live" id="sport-line">-</div>
-        <div class="msg" id="sport-stat" aria-live="polite"></div>
-        <div class="msg" id="next-line" aria-live="polite"></div>
-        <div class="msg" id="news-line" aria-live="polite"></div>
-      </div>
-      <details class="help"><summary data-t="previewHelp">What changes on the TV</summary><p data-t="previewHelpTech">Status comes from the Shard; the banners themselves are decided by the Notification Center.</p></details>
-    </section>
-    <section class="panel">
-      <h2><svg class="section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 4v6c0 4.5-3.2 7.3-8 8-4.8-.7-8-3.5-8-8V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg><span data-t="stateTitle">State</span></h2>
-      <div class="statrow"><div><b data-t="shard">Shard</b><small data-t="stateShardNote">This panel</small></div><span class="chip" id="pv-shard">-</span></div>
-      <div class="statrow"><div><b>Notification Center</b><small data-t="stateNcNote">Banners on the TV</small></div><span class="chip" id="pv-nc">-</span></div>
-      <div class="statrow"><div><b data-t="diagLog">Log</b><small data-t="stateLogNote">Recent events</small></div><span class="chip" id="pv-log">-</span></div>
-      <div class="row"><button type="button" class="g" id="drawer-open" data-t="drawerTitle">Details</button></div>
-    </section>
-  </div>
+</div><!-- /tab-work -->
+
+<!-- ============ SETTINGS ============ -->
+<div class="tab" id="tab-setup" role="tabpanel" aria-labelledby="tabbtn-setup" hidden>
   <div class="stack">
+    <div class="card wide">
+      <details class="sec" open>
+        <summary data-t="generalCard">General</summary>
+        <div class="modgrid">
+          <div class="setting"><label for="m-sport" id="m-sport-name" data-t="sport">Sport</label><label class="switch"><input type="checkbox" role="switch" id="m-sport" aria-labelledby="m-sport-name"><span aria-hidden="true"></span></label></div>
+          <div class="setting"><label for="m-weather" id="m-weather-name" data-t="weather">Weather</label><label class="switch"><input type="checkbox" role="switch" id="m-weather" aria-labelledby="m-weather-name"><span aria-hidden="true"></span></label></div>
+          <div class="setting"><label for="m-news" id="m-news-name" data-t="news">News</label><label class="switch"><input type="checkbox" role="switch" id="m-news" aria-labelledby="m-news-name"><span aria-hidden="true"></span></label></div>
+          <div class="setting"><label for="m-civ" id="m-civ-name" data-t="tabCiv">Civil protection</label><label class="switch"><input type="checkbox" role="switch" id="m-civ" aria-labelledby="m-civ-name"><span aria-hidden="true"></span></label></div>
+        </div>
+      </details>
+      <div class="msg" id="save-state" aria-live="polite"></div>
+      <div class="row"><button type="button" class="g" id="save-mod" data-t="save">Save</button><button type="button" class="p" id="save-all" data-t="saveAll">Save all</button></div>
+    </div>
+
+    <div class="card wide">
+      <details class="sec" open>
+        <summary data-t="notificationCard">Notification</summary>
+        <div class="layout">
+          <div class="stage">
+            <section class="panel">
+              <h2><svg class="section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6z"/><circle cx="12" cy="12" r="3"/></svg><span data-t="preview">Preview</span></h2>
+              <div class="preview-card"><span class="preview-kicker" data-t="onTv">On the TV</span><b data-t="title">NEWS</b>
+                <p data-t="previewSetup">Each module sends its own alerts through the Notification Center.</p>
+                <div><span class="chip" id="pv-mod-sport">Sport</span><span class="chip" id="pv-mod-weather">Weather</span><span class="chip" id="pv-mod-news">News</span></div>
+              </div>
+              <details class="help"><summary data-t="previewHelp">What changes on the TV</summary><p data-t="previewHelpSetup">Only the modules switched on here can show banners. Nothing is drawn by this panel.</p></details>
+            </section>
+          </div>
+          <div class="stack">
+            <div class="small" data-t="tabFootball">Football</div>
+            <label class="f" for="f-mode" data-t="mode">Mode</label>
+            <select id="f-mode"></select>
+            <div class="dur"><label for="f-goalsec" data-t="goalsec">Goal banner (s)</label><input type="range" id="f-goalsec" min="5" max="60"><b id="f-goalsecv"></b></div>
+            <div class="dur"><label for="f-othersec" data-t="othersec">Other banners (s)</label><input type="range" id="f-othersec" min="3" max="30"><b id="f-othersecv"></b></div>
+            <div class="small" data-t="tabOthers">Other sports</div>
+            <label class="f" for="o-mode" data-t="mode">Mode</label>
+            <select id="o-mode"></select>
+            <div class="dur"><label for="o-seconds" data-t="seconds">Banner (s)</label><input type="range" id="o-seconds" min="3" max="30"><b id="o-secondsv"></b></div>
+            <div class="small" data-t="weatherCard">Weather</div>
+            <label class="f" for="w-mode" data-t="mode">Mode</label>
+            <select id="w-mode"></select>
+            <div class="dur"><label for="w-seconds" data-t="seconds">Banner (s)</label><input type="range" id="w-seconds" min="3" max="30"><b id="w-secondsv"></b></div>
+            <div class="small" data-t="tabNews">News</div>
+            <label class="f" for="n-mode" data-t="mode">Mode</label>
+            <select id="n-mode"></select>
+            <div class="dur"><label for="n-seconds" data-t="seconds">Banner (s)</label><input type="range" id="n-seconds" min="3" max="30"><b id="n-secondsv"></b></div>
+            <div class="small" data-t="tabCiv">Civil protection</div>
+            <label class="f" for="civ-mode" data-t="mode">Mode</label>
+            <select id="civ-mode"></select>
+            <div class="dur"><label for="civ-seconds" data-t="seconds">Banner (s)</label><input type="range" id="civ-seconds" min="3" max="60"><b id="civ-secondsv"></b></div>
+          </div>
+        </div>
+        <div class="row"><button type="button" class="g" id="test-all" data-t="testAll">Test</button></div>
+      </details>
+    </div>
+
+    <div class="card wide">
+      <details class="sec" open>
+        <summary data-t="soundCard">Sound</summary>
+        <div class="grid">
+          <div>
+            <div class="small" data-t="tabFootball">Football</div>
+            <div class="setting"><label for="f-sound" id="f-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="f-sound" aria-labelledby="f-sound-name"><span aria-hidden="true"></span></label></div>
+            <div class="dur"><label for="f-volume" data-t="volume">Volume</label><input type="range" id="f-volume" min="10" max="100" step="5"><b id="f-volumev"></b></div>
+            <div class="small" data-t="tabOthers">Other sports</div>
+            <div class="setting"><label for="o-sound" id="o-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="o-sound" aria-labelledby="o-sound-name"><span aria-hidden="true"></span></label></div>
+            <div class="dur"><label for="o-volume" data-t="volume">Volume</label><input type="range" id="o-volume" min="10" max="100" step="5"><b id="o-volumev"></b></div>
+          </div>
+          <div>
+            <div class="small" data-t="weatherCard">Weather</div>
+            <div class="setting"><label for="w-sound" id="w-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="w-sound" aria-labelledby="w-sound-name"><span aria-hidden="true"></span></label></div>
+            <div class="dur"><label for="w-volume" data-t="volume">Volume</label><input type="range" id="w-volume" min="10" max="100" step="5"><b id="w-volumev"></b></div>
+            <div class="small" data-t="tabNews">News</div>
+            <div class="setting"><label for="n-sound" id="n-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="n-sound" aria-labelledby="n-sound-name"><span aria-hidden="true"></span></label></div>
+            <div class="dur"><label for="n-volume" data-t="volume">Volume</label><input type="range" id="n-volume" min="10" max="100" step="5"><b id="n-volumev"></b></div>
+            <div class="small" data-t="tabCiv">Civil protection</div>
+            <div class="setting"><label for="civ-sound" id="civ-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="civ-sound" aria-labelledby="civ-sound-name"><span aria-hidden="true"></span></label></div>
+            <div class="dur"><label for="civ-volume" data-t="volume">Volume</label><input type="range" id="civ-volume" min="10" max="100" step="5"><b id="civ-volumev"></b></div>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div class="card wide">
+      <details class="sec" open>
+        <summary data-t="backupCard">Backup</summary>
+        <div class="row">
+          <button type="button" class="g" id="cfg-show" data-t="cfgShow">Show config</button>
+          <button type="button" class="g" id="cfg-copy" data-t="cfgCopy">Copy</button>
+          <button type="button" class="g" id="cfg-load" data-t="cfgLoad">Load config</button>
+          <button type="button" class="x" id="reset-cfg" data-t="resetCfg">Reset</button>
+        </div>
+        <pre id="cfg-json" class="small"></pre>
+        <label class="f" for="cfg-input" data-t="cfgPaste">Paste configuration (JSON)</label>
+        <textarea id="cfg-input" rows="4"></textarea>
+        <div class="small" data-t="resetNote">Reset discards edits in this panel and reloads what the Shard has saved.</div>
+        <div class="msg" id="cfg-msg" aria-live="polite"></div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SYSTEM ============ -->
+<div class="tab" id="tab-tech" role="tabpanel" aria-labelledby="tabbtn-tech" hidden>
+  <div class="systemcols">
+  <div class="stack">
+    <div class="card wide">
+      <details class="sec" open>
+        <summary data-t="statusTitle">Status</summary>
+        <div class="statrow"><div><b data-t="shard">Shard</b><small data-t="stateShardNote">This panel</small></div><span class="chip" id="pv-shard">-</span></div>
+        <div class="statrow"><div><b>Notification Center</b><small data-t="stateNcNote">Banners on the TV</small></div><span class="chip" id="pv-nc">-</span></div>
+        <div class="statrow"><div><b data-t="depTitle">Dependencies</b><small data-t="depNote">Hub, app and service</small></div><span class="chip" id="pv-deps">-</span></div>
+        <div class="statrow"><div><b data-t="linkTitle">Connection</b><small data-t="linkNote">Panel to Shard</small></div><span class="chip" id="pv-link">-</span></div>
+        <div class="statrow"><div><b data-t="diagLog">Log</b><small data-t="stateLogNote">Recent events</small></div><span class="chip" id="pv-log">-</span></div>
+      </details>
+      <section class="panel" style="margin-top:12px">
+        <h2><svg class="section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span data-t="now">Right now</span></h2>
+        <div class="preview-card"><span class="preview-kicker" data-t="onTv">On the TV</span>
+          <div class="live" id="sport-line">-</div>
+          <div class="msg" id="sport-stat" aria-live="polite"></div>
+          <div class="msg" id="next-line" aria-live="polite"></div>
+          <div class="msg" id="news-line" aria-live="polite"></div>
+        </div>
+        <details class="help"><summary data-t="previewHelp">What changes on the TV</summary><p data-t="previewHelpTech">Status comes from the Shard; the banners themselves are decided by the Notification Center.</p></details>
+        <div class="row"><button type="button" class="g" id="drawer-open" data-t="drawerTitle">Details</button></div>
+      </section>
+    </div>
     <div class="card wide">
       <div class="row"><button type="button" class="g" id="check" data-t="check">Check now</button></div>
     </div>
@@ -594,15 +673,12 @@ table.api th { color:var(--dim); font-weight:500; }
             <div id="diag-watches" class="small"></div>
           </div>
           <div>
-            <div class="f" data-t="diagLog">Log</div>
-            <div id="diag-log" class="small"></div>
-          </div>
-          <div>
             <div class="f" data-t="diagHealth">Providers</div>
             <div id="diag-health" class="small"></div>
           </div>
         </div>
-        <div class="row"><button type="button" class="g" id="clear-log" data-t="clearLog">Clear log</button></div>
+        <div class="f" data-t="lastError">Last error</div>
+        <div id="last-error" class="small"></div>
       </details>
     </div>
     <div class="card wide">
@@ -615,6 +691,15 @@ table.api th { color:var(--dim); font-weight:500; }
           <tr><td>POST /api/clearlog</td><td data-t="routeClear">Empty the log</td></tr>
         </tbody></table></div>
         <pre id="api-help" class="small"></pre>
+      </details>
+    </div>
+  </div>
+  <div class="stack">
+    <div class="card wide">
+      <details class="sec" open>
+        <summary data-t="logRecent">Recently sent</summary>
+        <div id="diag-log" class="small"></div>
+        <div class="row"><button type="button" class="g" id="log-refresh" data-t="refresh">Refresh</button><button type="button" class="g" id="clear-log" data-t="clearLog">Clear log</button></div>
       </details>
     </div>
   </div>
@@ -641,8 +726,9 @@ table.api th { color:var(--dim); font-weight:500; }
   var $ = function (id) { return document.getElementById(id); };
   var T = {
     en: {
-      title:"NEWS", saveAll:"Save all", testAll:"Test all", tabPrev:"Previous", tabNext:"Next", unsaved:"Unsaved changes", savedAt:"Saved at ",
-      tabSetup:"SETUP", tabSport:"Sport", techApi:"API and examples", diagTitle:"Diagnostics", diagWatches:"Watched", diagLog:"Log", diagHealth:"Providers", clearLog:"Clear log", confirmClear:"Click again: clear log", noAnswer:"No answer from the Shard: open the panel again", tabWeather:"Weather", tabNews:"News", tabFootball:"Football", tabOthers:"Other sports", tabTech:"Technical",
+      title:"NEWS", saveAll:"Save all", testAll:"Test", tabPrev:"Previous", tabNext:"Next", unsaved:"Unsaved changes", savedAt:"Saved at ",
+      tabWork:"Work", tabSettings:"Settings", tabSystem:"System", tabSport:"Sport", tabWeather:"Weather", tabNews:"News", tabFootball:"Football", tabOthers:"Other sports",
+      techApi:"API and examples", diagTitle:"Diagnostics", diagWatches:"Watched", diagLog:"Log", diagHealth:"Providers", clearLog:"Clear log", confirmClear:"Click again: clear log", noAnswer:"No answer from the Shard: open the panel again",
       modules:"Modules", sport:"Sport", weather:"Weather", news:"News", now:"Right now",
       weatherCard:"Weather", place:"Place", interval:"Interval (min)", seconds:"Banner (s)", mode:"Mode",
       style:"Style", sound:"Sound", test:"Test", save:"Save", savekey:"Save key",
@@ -685,19 +771,25 @@ table.api th { color:var(--dim); font-weight:500; }
       simEdit:"Edit the test clubs", simId:"ESPN id", simMsg:"Message", simColor:"Stripe colour", volume:"Volume",
       lead:"Alerts on the TV, sent through the Notification Center.", preview:"Preview", onTv:"On the TV", previewHelp:"What changes on the TV",
       previewSetup:"Each module sends its own alerts through the Notification Center.", previewHelpSetup:"Only the modules switched on here can show banners. Nothing is drawn by this panel.",
-      previewWeather:"The next weather alert will look like this.", previewHelpWeather:"Mode, sound, volume and the place chosen below are used by every weather banner.",
+      previewWeather:"The next weather alert will look like this.", previewHelpWeather:"The place and interval chosen here are used by every weather banner; style is in Settings.",
       previewNews:"New headlines appear as they arrive.", previewHelpNews:"Only headlines newer than the last check are announced, one source at a time.",
-      previewSport:"Goals and match events use the style chosen below.", previewHelpSport:"The selected club decides the crest, the name and which alerts are shown.",
+      previewSport:"Goals and match events use the style chosen in Settings.", previewHelpSport:"The selected club decides the crest, the name and which alerts are shown; style is in Settings.",
       previewOthers:"Scores from NBA, MLB, NHL, NFL and F1 picks.", previewHelpOthers:"Each pick has its own watch and alerts; removing one does not change the others.",
       previewHelpTech:"Status comes from the Shard; the banners themselves are decided by the Notification Center.",
       stateTitle:"State", shard:"Shard", stateShardNote:"This panel", stateNcNote:"Banners on the TV", stateLogNote:"Recent events",
       findPlace:"Search by name", foundPlaces:"Results", thRoute:"Route", thUse:"Use", routeLast:"Public state, no key",
       routeTest:"Send one test banner", routePoll:"Check one module now", routeClear:"Empty the log",
-      drawerTitle:"Details", close:"Close", del:"Delete", cancel:"Cancel", queued:"queued"
+      drawerTitle:"Details", close:"Close", del:"Delete", cancel:"Cancel", queued:"queued",
+      generalCard:"General", notificationCard:"Notification", soundCard:"Sound", backupCard:"Backup",
+      cfgShow:"Show config", cfgCopy:"Copy", cfgLoad:"Load config", cfgPaste:"Paste configuration (JSON)", cfgShown:"Config shown below.", cfgCopied:"Config copied.", cfgLoaded:"Config loaded.", cfgInvalid:"Invalid JSON.",
+      resetCfg:"Reset", resetNote:"Reset discards edits in this panel and reloads what the Shard has saved.", settingsWord:"all settings", statusTitle:"Status", depTitle:"Dependencies", depNote:"Hub, app and service", linkTitle:"Connection", linkNote:"Panel to Shard",
+      lastError:"Last error", noError:"None", logRecent:"Recently sent", refresh:"Refresh", styleInSettings:"Banner style, sound and volume are in Settings.",
+      chipActive:"Alerts active", chipIdle:"No modules on", chipOnline:"Connected", chipRetry:"Try again", chipLoading:"Loading...", depFallback:"NC ?"
     },
     pt: {
-      title:"NEWS", saveAll:"Guardar tudo", testAll:"Testar tudo", tabPrev:"Anterior", tabNext:"Seguinte", unsaved:"Altera\u00E7\u00F5es por guardar", savedAt:"Guardado \u00E0s ",
-      tabSetup:"SETUP", tabSport:"Desporto", techApi:"API e exemplos", diagTitle:"Diagn\u00F3stico", diagWatches:"Acompanhados", diagLog:"Registo", diagHealth:"Fornecedores", clearLog:"Limpar registo", confirmClear:"Clique outra vez: limpar registo", noAnswer:"Sem resposta do Shard: abra o painel novamente", tabWeather:"Tempo", tabNews:"Not\u00EDcias", tabFootball:"Futebol", tabOthers:"Outros desportos", tabTech:"T\u00E9cnico",
+      title:"NEWS", saveAll:"Guardar tudo", testAll:"Testar", tabPrev:"Anterior", tabNext:"Seguinte", unsaved:"Altera\u00E7\u00F5es por guardar", savedAt:"Guardado \u00E0s ",
+      tabWork:"Trabalho", tabSettings:"Defini\u00E7\u00F5es", tabSystem:"Sistema", tabSport:"Desporto", tabWeather:"Tempo", tabNews:"Not\u00EDcias", tabFootball:"Futebol", tabOthers:"Outros desportos",
+      techApi:"API e exemplos", diagTitle:"Diagn\u00F3stico", diagWatches:"Acompanhados", diagLog:"Registo", diagHealth:"Fornecedores", clearLog:"Limpar registo", confirmClear:"Clique outra vez: limpar registo", noAnswer:"Sem resposta do Shard: abra o painel novamente",
       modules:"M\u00F3dulos", sport:"Desporto", weather:"Tempo", news:"Not\u00EDcias", now:"Agora",
       weatherCard:"Tempo", place:"Local", interval:"Intervalo (min)", seconds:"Banner (s)", mode:"Modo",
       style:"Estilo", sound:"Som", test:"Teste", save:"Guardar", savekey:"Guardar chave",
@@ -740,18 +832,24 @@ table.api th { color:var(--dim); font-weight:500; }
       simEdit:"Editar clubes de teste", simId:"Id ESPN", simMsg:"Mensagem", simColor:"Cor da faixa", volume:"Volume",
       lead:"Avisos na TV, enviados pelo Notification Center.", preview:"Pr\u00E9-visualiza\u00E7\u00E3o", onTv:"Na TV", previewHelp:"O que muda na TV",
       previewSetup:"Cada m\u00F3dulo envia os seus avisos pelo Notification Center.", previewHelpSetup:"S\u00F3 os m\u00F3dulos ligados aqui podem mostrar avisos. Este painel n\u00E3o desenha nada na TV.",
-      previewWeather:"O pr\u00F3ximo aviso de tempo ter\u00E1 este aspeto.", previewHelpWeather:"O modo, o som, o volume e o local escolhidos abaixo s\u00E3o usados em todos os avisos de tempo.",
+      previewWeather:"O pr\u00F3ximo aviso de tempo ter\u00E1 este aspeto.", previewHelpWeather:"O local e o intervalo escolhidos aqui s\u00E3o usados em todos os avisos de tempo; o estilo est\u00E1 em Defini\u00E7\u00F5es.",
       previewNews:"As manchetes novas aparecem \u00E0 medida que chegam.", previewHelpNews:"S\u00F3 s\u00E3o anunciadas manchetes mais recentes do que a \u00FAltima verifica\u00E7\u00E3o, uma fonte de cada vez.",
-      previewSport:"Os golos e os eventos do jogo usam o estilo escolhido abaixo.", previewHelpSport:"O clube escolhido decide o emblema, o nome e os alertas mostrados.",
+      previewSport:"Os golos e os eventos do jogo usam o estilo escolhido em Defini\u00E7\u00F5es.", previewHelpSport:"O clube escolhido decide o emblema, o nome e os alertas mostrados; o estilo est\u00E1 em Defini\u00E7\u00F5es.",
       previewOthers:"Resultados de NBA, MLB, NHL, NFL e F1.", previewHelpOthers:"Cada escolha tem o seu acompanhamento e alertas; remover uma n\u00E3o altera as outras.",
       previewHelpTech:"O estado vem do Shard; os avisos na TV s\u00E3o decididos pelo Notification Center.",
       stateTitle:"Estado", shard:"Shard", stateShardNote:"Este painel", stateNcNote:"Avisos na TV", stateLogNote:"Eventos recentes",
       findPlace:"Procurar por nome", foundPlaces:"Resultados", thRoute:"Rota", thUse:"Uso", routeLast:"Estado p\u00FAblico, sem chave",
       routeTest:"Enviar um aviso de teste", routePoll:"Verificar um m\u00F3dulo agora", routeClear:"Esvaziar o registo",
-      drawerTitle:"Detalhes", close:"Fechar", del:"Apagar", cancel:"Cancelar", queued:"na fila"
+      drawerTitle:"Detalhes", close:"Fechar", del:"Apagar", cancel:"Cancelar", queued:"na fila",
+      generalCard:"Geral", notificationCard:"Aviso", soundCard:"Som", backupCard:"C\u00F3pia",
+      cfgShow:"Mostrar config", cfgCopy:"Copiar", cfgLoad:"Carregar config", cfgPaste:"Colar configura\u00E7\u00E3o (JSON)", cfgShown:"Config apresentada abaixo.", cfgCopied:"Config copiada.", cfgLoaded:"Config carregada.", cfgInvalid:"JSON inv\u00E1lido.",
+      resetCfg:"Repor", resetNote:"Repor descarta as altera\u00E7\u00F5es neste painel e recarrega o que o Shard guardou.", settingsWord:"todas as defini\u00E7\u00F5es", statusTitle:"Estado", depTitle:"Depend\u00EAncias", depNote:"Hub, app e servi\u00E7o", linkTitle:"Liga\u00E7\u00E3o", linkNote:"Painel ao Shard",
+      lastError:"\u00DAltimo erro", noError:"Nenhum", logRecent:"Enviadas recentemente", refresh:"Atualizar", styleInSettings:"O estilo do aviso, o som e o volume est\u00E3o em Defini\u00E7\u00F5es.",
+      chipActive:"Avisos ativos", chipIdle:"Sem m\u00F3dulos", chipOnline:"Ligado", chipRetry:"Tentar outra vez", chipLoading:"A carregar...", depFallback:"NC ?"
     }
   };
   var lang = "en", cfg = null, dirty = false, lastSaveAt = 0;
+  var ncVersion = "", ncApp = "", ncService = "", linkOK = false, linkFailed = false;
   function updateSaveState() {
     var e = $("save-state");
     if (!e) { return; }
@@ -787,6 +885,8 @@ table.api th { color:var(--dim); font-weight:500; }
     for (i = 0; i < els.length; i++) { els[i].textContent = tr(els[i].getAttribute("data-t")); }
     $("l-en").className = lang === "en" ? "on" : "";
     $("l-pt").className = lang === "pt" ? "on" : "";
+    $("l-en").setAttribute("aria-pressed", lang === "en" ? "true" : "false");
+    $("l-pt").setAttribute("aria-pressed", lang === "pt" ? "true" : "false");
   }
   var toastTimer = null, lastState = null;
   // Success floats at the bottom for 4 s; an error stays next to the control (Vetro 0.19.0).
@@ -845,7 +945,13 @@ table.api th { color:var(--dim); font-weight:500; }
     picks:"<path d=\"M4 20V4M4 20h16\"/><path d=\"M8 16l4-5 3 2 4-6\"/>",
     now:"<path d=\"M3 12h4l3-7 4 14 3-7h4\"/>",
     diagTitle:"<path d=\"M4 5h16v14H4z\"/><path d=\"M8 10h8M8 14h5\"/>",
-    techApi:"<path d=\"M9 7l-5 5 5 5M15 7l5 5-5 5\"/>"
+    techApi:"<path d=\"M9 7l-5 5 5 5M15 7l5 5-5 5\"/>",
+    generalCard:"<rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"14\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"/>",
+    notificationCard:"<path d=\"M4 5h16v14H4z\"/><path d=\"M7 9h10M7 13h10M7 17h6\"/>",
+    soundCard:"<path d=\"M4 9v6h4l5 4V5L8 9H4z\"/><path d=\"M17 9c1.5 1.6 1.5 4.4 0 6\"/>",
+    backupCard:"<path d=\"M4 7h16v12H4z\"/><path d=\"M9 7V4h6v3M9 12h6M9 16h4\"/>",
+    statusTitle:"<path d=\"M3 12h4l3-7 4 14 3-7h4\"/>",
+    logRecent:"<path d=\"M5 4h14v16H5z\"/><path d=\"M9 8h6M9 12h6M9 16h4\"/>"
   };
   function sectionIcons() {
     var list = document.querySelectorAll("details.sec > summary"), i, j, key, sum, kids, span;
@@ -879,6 +985,40 @@ table.api th { color:var(--dim); font-weight:500; }
     if (!e) { return; }
     e.textContent = text; e.className = "chip" + (cls ? " " + cls : "");
   }
+  // One line of status chips in the header; the same values are repeated as rows in System.
+  function updateHeader() {
+    var mods = ["sport", "weather", "news"], i, on = 0;
+    if (cfg) {
+      for (i = 0; i < mods.length; i++) { if (cfg.modules && cfg.modules[mods[i]]) { on++; } }
+      if (cfg.civ && cfg.civ.enabled) { on++; }
+    }
+    chip("chip-now", tr(on ? "chipActive" : "chipIdle"), on ? "ok" : "warn");
+    var parts = ["NC " + (ncVersion || "?")];
+    if (ncApp) { parts.push("App " + ncApp); }
+    if (ncService) { parts.push("Service " + ncService); }
+    var deps = parts.join(" | "), linkText = tr(linkOK ? "chipOnline" : (linkFailed ? "chipRetry" : "chipLoading"));
+    var linkCls = linkOK ? "ok" : (linkFailed ? "bad" : "warn");
+    chip("chip-deps", deps, ncVersion ? "ok" : "warn");
+    chip("chip-link", linkText, linkCls);
+    chip("pv-deps", deps, ncVersion ? "ok" : "warn");
+    chip("pv-link", linkText, linkCls);
+  }
+  // The Shard does not publish the hub's version: read it from the local Notification Center.
+  function readNc() {
+    var loc = window.location || {};
+    var url = (loc.protocol && loc.host)
+      ? loc.protocol + "//" + loc.host + "/plugins/notification-center/api/api"
+      : "http://127.0.0.1:8099/plugins/notification-center/api/api";
+    fetch(url, { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (d) {
+      var a = d && (d.appVersion || d.app);
+      ncVersion = (d && d.version) ? String(d.version) : "";
+      ncApp = a ? (typeof a === "object" ? String(a.version || "") : String(a)) : "";
+      if (d && d.service) {
+        ncService = typeof d.service === "object" ? String(d.service.version || "on") : String(d.service === true ? "on" : d.service);
+      } else { ncService = ""; }
+      updateHeader();
+    }).catch(function () { ncVersion = ""; ncApp = ""; ncService = ""; updateHeader(); });
+  }
   function paintPreview() {
     if (!cfg) { return; }
     chip("pv-mod-sport", tr("sport"), cfg.modules.sport ? "ok" : "");
@@ -897,6 +1037,7 @@ table.api th { color:var(--dim); font-weight:500; }
     var pn = $("pv-news-line"), ps = $("pv-sport-line");
     if (pn) { pn.textContent = $("news-line").textContent || tr("noneyet"); }
     if (ps) { ps.textContent = $("sport-line").textContent || "-"; }
+    updateHeader();
   }
   function api(path, body) {
     var opt = { method: body ? "POST" : "GET", cache: "no-store" };
@@ -1232,9 +1373,9 @@ table.api th { color:var(--dim); font-weight:500; }
   function state() {
     return api("state").then(function (d) {
       var first = !cfg;
-      cfg = d.config; lastState = d;
+      cfg = d.config; lastState = d; linkOK = true; linkFailed = false;
       if (cfg.version) { $("ver").textContent = "v" + cfg.version; }
-      if (first && cfg.lang && cfg.lang !== lang) { lang = cfg.lang; applyText(); }
+      if (first && cfg.lang && cfg.lang !== lang) { lang = cfg.lang; document.documentElement.lang = lang; applyText(); }
       if (first || !dirty) { fill(); }
       $("sport-line").textContent = (d.status.sport && d.status.sport.line) || "-";
       $("sport-stat").textContent = (d.status.sport && d.status.sport.at) ?
@@ -1293,6 +1434,13 @@ table.api th { color:var(--dim); font-weight:500; }
           (hp.okAt ? ' <span class="small">' + esc(fmtWhen(new Date(hp.okAt).toISOString())) + "</span>" : "") + "</div>";
       }
       $("diag-health").innerHTML = hh || tr("noneyet");
+      var lastErr = null;
+      for (li = (d.log || []).length - 1; li >= 0; li--) {
+        if (d.log[li] && d.log[li].kind === "error") { lastErr = d.log[li]; break; }
+      }
+      $("last-error").textContent = lastErr
+        ? (new Date(lastErr.at).toLocaleTimeString() + " \u00B7 " + (lastErr.mod || "") + " \u00B7 " + (lastErr.text || ""))
+        : tr("noError");
       $("api-help").textContent = lang === "pt"
         ? "Estado publico (sem chaves):\n  curl http://<TV-IP>:8099/plugins/match-alerts/api/last\n\nRotas:\n  GET  /api/state    estado completo (painel)\n  GET  /api/last     vista publica\n  POST /api/test     {kind:goal|weather|news|civ}\n  POST /api/poll     {module:sport|weather|news|civ}\n  POST /api/clearlog esvazia o registo\n\nNota: o Vetro recusa pedidos com Origin de outro site; use um script na TV ou localhost."
         : "Public state (no keys):\n  curl http://<TV-IP>:8099/plugins/match-alerts/api/last\n\nRoutes:\n  GET  /api/state    full state (panel only)\n  GET  /api/last     public read-only view\n  POST /api/test     {kind:goal|weather|news|civ}\n  POST /api/poll     {module:sport|weather|news|civ}\n  POST /api/clearlog empties the log\n\nNote: Vetro refuses requests with an Origin from another site; use a script on the TV or localhost.";
@@ -1335,79 +1483,99 @@ table.api th { color:var(--dim); font-weight:500; }
 
   // ---- wiring ---------------------------------------------------------------------------------------------------------------
   var tabs = document.querySelectorAll(".tabs button");
+  var worktabs = document.querySelectorAll(".worktabs button");
+  var subtabs = document.querySelectorAll(".subsubtabs button");
   function currentTab() {
     for (var i = 0; i < tabs.length; i++) { if (tabs[i].className.indexOf("on") >= 0) { return i; } }
     return 0;
   }
-  // Setup and Technical are always visible. The other tabs follow the module switches in Setup;
-  // hiding a tab never clears its configuration, it only hides the button and pane.
-  function tabEnabled(name) {
-    if (name === "setup" || name === "tech") { return true; }
-    if (name === "weather") { return $("m-weather").checked; }
-    if (name === "news") { return $("m-news").checked; }
-    if (name === "sport") { return $("m-sport").checked; }
+  function currentWorktab() {
+    for (var i = 0; i < worktabs.length; i++) { if (worktabs[i].className.indexOf("on") >= 0) { return i; } }
+    return 0;
+  }
+  // Work, Settings and System are always visible. The module switches only hide Work sub-tabs;
+  // hiding a module never clears its configuration.
+  function worktabEnabled(name) {
+    if (name === "sport") { return !!$("m-sport").checked; }
+    if (name === "weather") { return !!$("m-weather").checked; }
+    if (name === "news") { return !!$("m-news").checked; }
     return true;
   }
-  function visibleTabs() {
-    var out = [], i;
-    for (i = 0; i < tabs.length; i++) { if (tabEnabled(tabs[i].getAttribute("data-tab"))) { out.push(i); } }
-    return out;
-  }
   function updatePaneState() {
-    var i, name, on, active = tabs[currentTab()].getAttribute("data-tab"), pane;
+    var i, name, active = tabs[currentTab()].getAttribute("data-tab"), pane;
     for (i = 0; i < tabs.length; i++) {
-      name = tabs[i].getAttribute("data-tab"); on = tabEnabled(name);
-      tabs[i].hidden = !on;
+      name = tabs[i].getAttribute("data-tab");
       tabs[i].setAttribute("aria-selected", name === active ? "true" : "false");
-      pane = document.getElementById("tab-" + name);
-      if (pane) { pane.hidden = !on || name !== active; }
+      pane = $(tabs[i].getAttribute("aria-controls"));
+      if (pane) { pane.hidden = name !== active; }
+    }
+    var wa = worktabs[currentWorktab()].getAttribute("data-subtab");
+    for (i = 0; i < worktabs.length; i++) {
+      name = worktabs[i].getAttribute("data-subtab");
+      worktabs[i].hidden = !worktabEnabled(name);
+      worktabs[i].setAttribute("aria-selected", name === wa ? "true" : "false");
+      pane = $(worktabs[i].getAttribute("aria-controls"));
+      if (pane) { pane.hidden = !worktabEnabled(name) || name !== wa; }
     }
     var civColumn = $("civ-column");
     if (civColumn) { civColumn.hidden = !$("m-civ").checked; }
   }
   function applyTabVisibility() {
-    var vis = visibleTabs();
-    if (vis.length && vis.indexOf(currentTab()) < 0) { switchTab(vis[0]); }
+    var vis = [], i;
+    for (i = 0; i < worktabs.length; i++) {
+      if (worktabEnabled(worktabs[i].getAttribute("data-subtab"))) { vis.push(i); }
+    }
+    if (vis.length && vis.indexOf(currentWorktab()) < 0) { switchWorktab(vis[0]); }
     else { updatePaneState(); }
   }
-  function stepTab(delta) {
-    var vis = visibleTabs(), pos = vis.indexOf(currentTab());
-    if (!vis.length) { return; }
-    if (pos < 0) { pos = 0; }
-    pos = Math.max(0, Math.min(vis.length - 1, pos + delta));
-    switchTab(vis[pos]);
-  }
+  function stepTab(delta) { switchTab(currentTab() + delta); }
   function switchTab(idx) {
     if (idx < 0) { idx = tabs.length - 1; }
     if (idx >= tabs.length) { idx = 0; }
-    var id = tabs[idx].getAttribute("data-tab"), panes = document.querySelectorAll(".tab"), i;
+    var paneId = tabs[idx].getAttribute("aria-controls"), panes = document.querySelectorAll(".tab"), i;
     for (i = 0; i < tabs.length; i++) { tabs[i].className = i === idx ? "on" : ""; }
-    for (i = 0; i < panes.length; i++) { panes[i].className = panes[i].id === "tab-" + id ? "tab on" : "tab"; }
+    for (i = 0; i < panes.length; i++) { panes[i].className = panes[i].id === paneId ? "tab on" : "tab"; }
     updatePaneState();
     $("tabnav-label").textContent = tabs[idx].textContent;
     $("tab-prev").disabled = false; $("tab-next").disabled = false;
     window.scrollTo(0, 0);
   }
-  for (var ti = 0; ti < tabs.length; ti++) {
-    tabs[ti].addEventListener("click", function () {
-      for (var i = 0; i < tabs.length; i++) { if (tabs[i] === this) { switchTab(i); return; } }
-    });
+  function switchWorktab(idx) {
+    if (idx < 0) { idx = worktabs.length - 1; }
+    if (idx >= worktabs.length) { idx = 0; }
+    var i, paneId = worktabs[idx].getAttribute("aria-controls"), panes = document.querySelectorAll(".subtab");
+    for (i = 0; i < worktabs.length; i++) { worktabs[i].className = i === idx ? "on" : ""; }
+    for (i = 0; i < panes.length; i++) { panes[i].className = "subtab" + (panes[i].id === paneId ? " on" : ""); }
+    updatePaneState();
+    window.scrollTo(0, 0);
   }
-  var subtabs = document.querySelectorAll(".subtabs button");
   function switchSubtab(idx) {
-    var i, name = subtabs[idx].getAttribute("data-subtab"), panes = document.querySelectorAll(".subtab");
+    var i, name = subtabs[idx].getAttribute("data-subtab"), panes = document.querySelectorAll(".subsubtab");
     for (i = 0; i < subtabs.length; i++) {
       subtabs[i].className = i === idx ? "on" : "";
       subtabs[i].setAttribute("aria-selected", i === idx ? "true" : "false");
     }
-    for (i = 0; i < panes.length; i++) { panes[i].className = "subtab" + (panes[i].id === "subtab-" + name ? " on" : ""); }
+    for (i = 0; i < panes.length; i++) { panes[i].className = "subsubtab" + (panes[i].id === "subtab-" + name ? " on" : ""); }
     window.scrollTo(0, 0);
   }
-  for (var si = 0; si < subtabs.length; si++) {
-    subtabs[si].addEventListener("click", function () {
-      for (var i = 0; i < subtabs.length; i++) { if (subtabs[i] === this) { switchSubtab(i); return; } }
-    });
+  function wireTabs(list, fn) {
+    var i;
+    for (i = 0; i < list.length; i++) {
+      list[i].addEventListener("click", function () {
+        for (var j = 0; j < list.length; j++) { if (list[j] === this) { fn(j); return; } }
+      });
+      list[i].addEventListener("keydown", function (e) {
+        var j, pos = -1;
+        for (j = 0; j < list.length; j++) { if (list[j] === this) { pos = j; } }
+        if (pos < 0) { return; }
+        if (e.key === "ArrowRight" || e.keyCode === 39) { fn((pos + 1) % list.length); }
+        else if (e.key === "ArrowLeft" || e.keyCode === 37) { fn((pos - 1 + list.length) % list.length); }
+      });
+    }
   }
+  wireTabs(tabs, switchTab);
+  wireTabs(worktabs, switchWorktab);
+  wireTabs(subtabs, switchSubtab);
   $("tab-prev").addEventListener("click", function () { stepTab(-1); });
   $("tab-next").addEventListener("click", function () { stepTab(1); });
   $("save-all").addEventListener("click", function () {
@@ -1427,6 +1595,35 @@ table.api th { color:var(--dim); font-weight:500; }
     var btn = this;
     confirmHere(btn, tr("diagLog"), function () {
       act(btn, api("clearlog", {}).then(function () { $("diag-log").innerHTML = "\u2014"; say(tr("saved"), "ok"); }));
+    });
+  });
+  $("log-refresh").addEventListener("click", function () { act(this, state()); });
+  function configText() { return JSON.stringify(cfg || body(), null, 2); }
+  $("cfg-show").addEventListener("click", function () {
+    $("cfg-json").textContent = configText(); note("cfg-msg", tr("cfgShown"), "ok");
+  });
+  $("cfg-copy").addEventListener("click", function () {
+    var text = $("cfg-json").textContent || configText();
+    $("cfg-json").textContent = text;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { note("cfg-msg", tr("cfgCopied"), "ok"); })
+        .catch(function () { note("cfg-msg", tr("cfgInvalid"), "err"); });
+    } else { note("cfg-msg", tr("cfgCopied") + ": " + text.slice(0, 80), "ok"); }
+  });
+  $("cfg-load").addEventListener("click", function () {
+    var raw = String($("cfg-input").value || "").replace(/^\s+|\s+$/g, ""), obj;
+    try { obj = JSON.parse(raw); } catch (e) { note("cfg-msg", tr("cfgInvalid"), "err"); return; }
+    if (!obj || typeof obj !== "object" || Object.prototype.toString.call(obj) === "[object Array]") {
+      note("cfg-msg", tr("cfgInvalid"), "err"); return;
+    }
+    act(this, api("config", obj).then(function () { return state(); }).then(function () {
+      dirty = false; fill(); note("cfg-msg", tr("cfgLoaded"), "ok");
+    }));
+  });
+  $("reset-cfg").addEventListener("click", function () {
+    var btn = this;
+    confirmHere(btn, tr("settingsWord"), function () {
+      act(btn, state().then(function () { dirty = false; fill(); say(tr("saved"), "ok"); }));
     });
   });
   // Switching the panel language must not throw away clubs or sources added but not saved yet.
@@ -1732,8 +1929,14 @@ table.api th { color:var(--dim); font-weight:500; }
   applyText();
   $("tabnav-label").textContent = tabs[currentTab()].textContent;
   updateSaveState();
-  state().catch(function (e) { say(tr("err") + e.message, "err"); });
-  setInterval(function () { state().catch(function () {}); }, 20000);
+  state().catch(function (e) {
+    linkOK = false; linkFailed = true; updateHeader(); say(tr("err") + e.message, "err");
+  });
+  readNc();
+  setInterval(function () {
+    state().catch(function () { linkOK = false; linkFailed = true; updateHeader(); });
+    readNc();
+  }, 20000);
 })();
 </script>
 </body>

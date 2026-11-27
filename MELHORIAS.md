@@ -1,6 +1,6 @@
 # TV alerts — bugs, correções e melhorias
 
-Estado: código em **0.5.46**; TVs .7, .3 e .23 em 0.5.41 até à próxima instalação; Notification Center .7 **0.16.0**, .3 **0.17.1**, .23 **0.3.1**. Nome oficial do Shard: **NEWS** (id `match-alerts`). Por decisão do Marcelo, **não implementar** a chave API-Football (P1-5) nem a deduplicação de notícias (B5). ESPN é o fornecedor a usar. As três melhorias pedidas na última sessão estão feitas e fechadas abaixo; não há outras ideias em aberto.
+Estado: código em **0.5.49**; TVs .7, .3 e .23 em 0.5.48 até à próxima instalação; Notification Center .7/.3/.23 **0.26.1**. Nome oficial do Shard: **NEWS** (id `match-alerts`). Por decisão do Marcelo, **não implementar** a chave API-Football (P1-5) nem a deduplicação de notícias (B5). ESPN é o fornecedor a usar. As três melhorias pedidas na última sessão estão feitas e fechadas abaixo; não há outras ideias em aberto.
 
 ---
 
@@ -82,6 +82,10 @@ Pontos de restauro: `_backup-tv-alerts-0.4.5-*` a `_backup-tv-alerts-0.5.29-*` e
 ## 0.5.47 (2026-11-26)
 
 Sending to the Notification Center: real 5 s time limit, the answer is read, up to 3 retries (network error, 429, 5xx, failed; not 400/403), and every notification has a `category`.
+
+## 0.5.49 (2026-11-27)
+
+Interface comum `VETRO-UI-SHARDS.md`: três separadores (Trabalho com sub-tabs, Definições, Sistema), cabeçalho com ícone 44px e frase, chips, EN/PT segmentado, cartões de Definições e Sistema em duas colunas com registo à direita. Sem cartão de silêncio e sem interruptor geral (backend não os suporta). 24/24 testes.
 
 ## 0.5.48 (2026-11-26)
 

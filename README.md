@@ -310,6 +310,10 @@ the LAN — by design, since it carries no config or keys. Disable the Shard or 
 
 Sending to the Notification Center: real 5 s time limit, the answer is read, up to 3 retries (network error, 429, 5xx, failed; not 400/403), and every notification has a `category`.
 
+## 0.5.49 (2026-11-27)
+
+The panel follows the common Shard interface: three tabs (Work with Sport/Weather/News sub-tabs, Settings, System), 44 px icon with a sentence, status chips, segmented EN/PT, Settings cards General/Notification/Sound/Backup, System in two columns with "Recently sent" on the right. The quiet-hours card and the global switch were removed — quiet hours belong to Notification Center and the Shard has no global `enabled`. Tested with 24/24 mocked tests.
+
 ## 0.5.48 (2026-11-26)
 
 No night quiet any more: the 23h-07h switch of weather and news was removed. Quiet hours, if wanted, are set in the Notification Center.

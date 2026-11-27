@@ -19,7 +19,7 @@ Standalone project, split from the Notification Center repository. One Shard wit
 **Notification Center** Shard (github.com/mclaudiopt/tv-notification-center), which must be installed on the same TV with its companion app
 (Shard 0.2.0+, app 0.2.2+). The Shard id is still `match-alerts` so existing installations keep their config.
 
-## What exists (v0.5.46)
+## What exists (v0.5.49)
 
 The official Shard name is **NEWS** (manifest `name` and `ui.label`, Control center label and panel title). The id stays `match-alerts` so existing installations keep their configuration; one Shard covers all four modules by decision.
 - Penalty alerts (0.5.40): `espnEvent()` maps `Penalty - Saved` / `Penalty - Missed` (scoringPlay=false, previously dropped) to `penMiss` and `Penalty Awarded` to `penalty`; `Penalty - Scored` stays a goal. `announce()` adds "Penalty falhado" / "Penalty marcado" (taker in the message, `warn`/`info`, whistle/no icon, `reward`, normal overlay path, deduped). New switches `alerts.penalty` and `alerts.penMiss` (default on) in the Football tab and per-club config; API-Football maps its penalty detail the same way. Regression `tests/test_penalty.js` (23 tests). Notification Center is now 0.14.1 (only a new `estadio` theme; no new notify fields).
@@ -80,6 +80,10 @@ Lê `C:\Users\marce\Documents\Projeto Padrão\ESTADO.md` no início de cada tare
 ## 0.5.47 (2026-11-26)
 
 Sending to the Notification Center: real 5 s time limit, the answer is read, up to 3 retries (network error, 429, 5xx, failed; not 400/403), and every notification has a `category`.
+
+## 0.5.49 (2026-11-27)
+
+Common Shard interface (`VETRO-UI-SHARDS.md`) in `ui.html`: three tabs (Work/Trabalho with Sport/Weather/News sub-tabs, Settings/Definições, System/Sistema), 44 px header icon with sentence, status chips, segmented EN/PT, Settings cards General/Notification/Sound/Backup, System in two columns with "Recently sent" on the right. The quiet-hours card and the global on/off switch were removed: the Shard has no quiet field and no global `enabled` in config. Node check and 24/24 tests pass.
 
 ## 0.5.48 (2026-11-26)
 
