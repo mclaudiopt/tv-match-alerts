@@ -725,7 +725,7 @@ table.matrix .switch { min-height:36px; }
       err:"Error: ", sent:"Test sent.", loading:"Loading...", noTeams:"No team list for this league.",
       keyok:"Key OK - remaining today: ", keynone:"No key saved yet.", keyset:"A key is saved.",
       onlysoccer:"API-Football works for football only.", chooseOne:"Pick at least one source.",
-      clubNewsShort:"Club news", add:"Add", mode_banner:"Banner", mode_full:"Full screen", mode_overlay:"Bar", mode_both:"Both", mode_glass:"Glass bar", mode_panel:"Panel",
+      clubNewsShort:"Club news", add:"Add", mode_banner:"Samsung", mode_full:"Full screen", mode_overlay:"Bar", mode_both:"Both", mode_glass:"Glass bar", mode_panel:"Panel",
       addPlaceTitle:"Add a place", addPlaceNote:"search by name", find:"Find", addPlace:"Add selected", findFirst:"Search for a place first.",
       noPlaces:"No place found.", found:"Found: ", placeAdded:"Added", placeRemoved:"Removed",
       none:"None", noSport:"Choose a sport first.",
@@ -786,7 +786,7 @@ table.matrix .switch { min-height:36px; }
       err:"Erro: ", sent:"Teste enviado.", loading:"A carregar...", noTeams:"Sem lista de equipas para esta liga.",
       keyok:"Chave v\u00E1lida - restantes hoje: ", keynone:"Ainda sem chave.", keyset:"H\u00E1 uma chave guardada.",
       onlysoccer:"A API-Football s\u00F3 funciona para futebol.", chooseOne:"Escolha pelo menos uma fonte.",
-      clubNewsShort:"Not\u00EDcias do clube", add:"Adicionar", mode_banner:"Banner", mode_full:"Ecr\u00E3 inteiro", mode_overlay:"Barra", mode_both:"Ambos", mode_glass:"Barra de vidro", mode_panel:"Painel",
+      clubNewsShort:"Not\u00EDcias do clube", add:"Adicionar", mode_banner:"Samsung", mode_full:"Ecr\u00E3 inteiro", mode_overlay:"Barra", mode_both:"Ambos", mode_glass:"Barra de vidro", mode_panel:"Painel",
       addPlaceTitle:"Adicionar local", addPlaceNote:"procurar por nome", find:"Procurar", addPlace:"Adicionar selecionado", findFirst:"Primeiro procura um local.",
       noPlaces:"Nenhum local encontrado.", found:"Encontrados: ", placeAdded:"Adicionado", placeRemoved:"Removido",
       none:"Nenhum", noSport:"Escolhe primeiro um desporto.",
@@ -1040,7 +1040,9 @@ table.matrix .switch { min-height:36px; }
     if (value) { el.value = value; }
   }
   function fillMode(el, value) {
-    var list = (cfg && cfg.modes) || ["banner", "full", "overlay"];
+    // The hub draws "overlay" as the glass bar, so only the glass bar is offered.
+    var list = ((cfg && cfg.modes) || ["banner", "full", "glass"]).filter(function (id) { return id !== "overlay" && id !== "both"; });
+    if (value === "overlay") { value = "glass"; }
     el.innerHTML = [""].concat(list).map(function (id) {
       return '<option value="' + id + '">' + (id === "" ? esc(tr("ncDefault")) : esc(tr("mode_" + id))) + "</option>";
     }).join("");

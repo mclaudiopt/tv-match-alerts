@@ -98,3 +98,7 @@ Night quiet (23h-07h) removed from weather and news.
 ## 0.5.50
 
 Dois emblemas (casa e fora) e destaque de quem marcou, nos golos reais e nos testes.
+
+## 0.5.51
+
+The look selector offers Samsung, full screen, glass bar and panel; a saved "overlay" is shown as the glass bar.

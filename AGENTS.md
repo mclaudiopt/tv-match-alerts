@@ -96,3 +96,7 @@ Night quiet (23h-07h) removed from weather and news.
 ## 0.5.50
 
 Goals and test goals send both crests (image = home, image2 = away) and highlight the side that scored, when the Notification Center lists those features. The look is the one chosen in the Shard; the effect shows in glass and panel.
+
+## 0.5.51
+
+The look selector offers Samsung, full screen, glass bar and panel; a saved "overlay" is shown as the glass bar.
