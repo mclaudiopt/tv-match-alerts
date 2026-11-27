@@ -133,23 +133,24 @@ var MODES = [
 ];
 var DEFAULTS = {
     modules: { sport: true, weather: false, news: false },
+    // 0 / '' = "Predefinição do Notification Center": the field is not sent and the hub decides.
     football: {
         provider: 'espn', clubs: [],
         alerts: { goal: true, against: true, card: true, sub: true, varNo: true, penalty: true, penMiss: true, start: true, half: true, end: true },
-        goalSeconds: 30, otherSeconds: 10, sound: true, mode: 'overlay', volume: 100,
+        goalSeconds: 0, otherSeconds: 0, sound: '', mode: '', volume: 0,
         nextGame: { enabled: true, minutes: 30 }
     },
     others: {
         picks: [],
         alerts: { start: true, half: true, end: true, score: false },
-        seconds: 10, sound: true, mode: 'overlay', volume: 100
+        seconds: 0, sound: '', mode: '', volume: 0
     },
     civ: {
         enabled: true, district: 'LRA',
         levels: { yellow: false, orange: true, red: true },
         anepc: true, news: false,
         keywords: 'emerg\u00EAncia,estado de alerta,evacua\u00E7\u00E3o,corte,sismo,inc\u00EAndio,inunda\u00E7\u00E3o,acidente grave,INEM,GNR,PSP,fecho',
-        interval: 10, seconds: 20, sound: true, mode: 'overlay', volume: 100
+        interval: 10, seconds: 0, sound: '', mode: '', volume: 0
     },
     // Test-only goal buttons in the Match panel. Separate from the clubs the Shard actually follows.
     sim: {
@@ -160,12 +161,19 @@ var DEFAULTS = {
             { id: '142', name: 'Feyenoord', level: 'alert', msg: 'Porto 0-1 Feyenoord' }
         ]
     },
-    weather: { place: 'lisbon', custom: [], provider: 'openmeteo', when: 'always', interval: 60, seconds: 12, sound: false, mode: 'banner', volume: 100,
+    weather: { place: 'lisbon', custom: [], provider: 'openmeteo', when: 'always', interval: 60, seconds: 0, sound: '', mode: '', volume: 0,
         proactive: { enabled: true, minutes: 120, rain: true, wind: true, heat: true, storm: true,
             rainPct: 60, windKmh: 50, heatC: 35, stormCode: 95 } },
-    news: { feeds: ['gnewspt'], interval: 30, seconds: 12, count: 1, sound: false, mode: 'banner', volume: 100 },
+    news: { feeds: ['gnewspt'], interval: 30, seconds: 0, count: 1, sound: '', mode: '', volume: 0 },
     lang: 'en'
 };
+// A saved boolean on/off sound is migrated to a name: on -> 'soft' (the hub's quiet default), off -> ''.
+// A new install has '' and sends no sound field, so the hub chooses per emitter/category.
+function normSound(v) {
+    if (v === true) { return 'soft'; }
+    if (v === false || v == null) { return ''; }
+    return String(v);
+}
 var TXT = {
     en: {
         goal: 'GOAL', against: 'Goal for ', cardY: 'Yellow card', cardR: 'Red card', sub: 'Substitution',
@@ -215,6 +223,9 @@ module.exports = function (ctx) {
         news: { at: 0, error: '', line: '', state: '', next: 0 }
     };
     var allowedSounds = null, soundTimer = null;
+    var allowedModes = ['banner', 'full', 'overlay'];   // grown from the hub's enums.mode
+    var hasImage2 = false;          // NC 0.29+: hub offers image2 field for away logo
+    var hasHighlight = false;       // NC 0.30+: hub offers highlight field for scoring team logo
     var civAlerts = [], civSeen = {}, civAreas = {};
 
     // Split providers: all HTTP and notification code stays in this file; the modules only keep
@@ -266,6 +277,8 @@ module.exports = function (ctx) {
 
     // ---- small helpers --------------------------------------------------------------------------------------------------------
     function clamp(v, lo, hi, def) { var n = parseInt(v, 10); if (!(n >= lo)) { return def; } return n > hi ? hi : n; }
+    // '' means "use the Notification Center default", never a hardcoded mode.
+    function normMode(v, def) { return v === '' ? '' : (allowedModes.indexOf(v) >= 0 ? v : def); }
     function clean(s, max) { return String(s == null ? '' : s).replace(/[\x00-\x1f]/g, ' ').slice(0, max); }
     function sendJson(res, code, obj) { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(obj)); }
     // /api/last is meant for widgets and a small read-only site: allow cross-origin reads and
@@ -387,14 +400,21 @@ module.exports = function (ctx) {
     }
 
     // ---- banners -------------------------------------------------------------------------------------------------------------
-    // Refresh the list of sounds the installed Notification Center actually knows. Unknown sounds
-    // are silently dropped there, so fall back to `alert` (present in every version) or no sound.
-    function refreshSounds() {
+    // Read the hub's own enums: unknown sounds are silently dropped (fall back to `alert`), and
+    // new look modes (glass, panel, both...) only appear in the panel if the hub offers them.
+    function refreshApi() {
         localJson('/plugins/notification-center/api/api', function (err, d) {
-            if (err || !d || !d.enums || !d.enums.sound) { return; }
-            var list = {}, i;
-            for (i = 0; i < d.enums.sound.length; i++) { list[d.enums.sound[i]] = true; }
-            allowedSounds = list;
+            if (err || !d || !d.enums) { return; }
+            if (d.enums.sound instanceof Array && d.enums.sound.length) {
+                var list = {}, i;
+                for (i = 0; i < d.enums.sound.length; i++) { list[d.enums.sound[i]] = true; }
+                allowedSounds = list;
+            }
+            if (d.enums.mode instanceof Array && d.enums.mode.length) { allowedModes = d.enums.mode.slice(0); }
+            // NC 0.29.0: image2 and highlight for goals. The Shard only sends them if the hub offers them.
+            var features = d.features instanceof Array ? d.features : [];
+            hasImage2 = features.indexOf('image2') >= 0;
+            hasHighlight = features.indexOf('highlight') >= 0;
         });
     }
     // Global rate limit across every module. The NC queue has only 5 slots and plays one sound per
@@ -403,6 +423,7 @@ module.exports = function (ctx) {
     // protection `high` priority bypasses the limit and is never queued.
     var BANNER_MAX_MIN = 4, BANNER_GAP = 1000, BANNER_QUEUE_MAX = 12;
     var sendTimes = [], bannerQueue = [], bannerTimer = null;
+    var lastSent = null;   // last notification the hub accepted, for the panel's "On the TV" preview
     // The Notification Center says whether it took the notification. A network error, a timeout, a 5xx, a 429 or an answer "failed" is tried again
     // (3 times at most, waiting what the hub asks); a 400 or 403 is not. stop() cancels what still waits.
     var NC_TRIES = 3, NC_WAIT = 30000, retryTimers = [];
@@ -431,6 +452,14 @@ module.exports = function (ctx) {
                 return fail('http ' + code + (j && j.error ? ': ' + j.error : ''), wait);
             }
             if (j && j.status === 'failed') { return fail('Notification Center: ' + (j.reason || 'failed'), NC_WAIT); }
+            // The hub accepted it: remember exactly what is now on the TV for the panel preview.
+            var sent = {};
+            try { sent = JSON.parse(text) || {}; } catch (e) { sent = {}; }
+            lastSent = {
+                at: Date.now(), title: String(sent.title || '').slice(0, 40),
+                message: String(sent.message || '').slice(0, 200),
+                status: (j && j.status) || 'queued', category: String(sent.category || '')
+            };
             done = true;
         }
         try {
@@ -485,10 +514,14 @@ module.exports = function (ctx) {
     function banner(title, message, level, icon, seconds, opts) {
         if (stopped) { return; }
         opts = opts || {};
+        // Regra 4: sound, volume, mode and duration go out only when the user chose them in the
+        // Shard. An empty/zero value means "Notification Center default" and the field is omitted.
         var body = {
             title: clean(title, 40), message: clean(message, 200), level: level, icon: icon || '',
-            mode: opts.mode || 'banner', duration: seconds, source: 'tv-alerts', category: opts.category || 'sport'
+            source: 'tv-alerts', category: opts.category || 'sport'
         };
+        if (opts.mode) { body.mode = opts.mode; }
+        if (seconds > 0) { body.duration = seconds; }
         if (opts.sound) {
             var snd = opts.sound;
             if (allowedSounds && !allowedSounds[snd]) { snd = allowedSounds.alert ? 'alert' : ''; }
@@ -499,6 +532,9 @@ module.exports = function (ctx) {
         if (opts.theme === 'sport' || opts.theme === 'news') { body.theme = opts.theme; }
         // NC 0.8+: a PNG URL becomes the icon of the overlay bar; the emoji `icon` stays as fallback.
         if (opts.image && /^https?:\/\//.test(opts.image) && opts.image.length <= 290) { body.image = opts.image; }
+        // NC 0.29+: away crest next to the home one; NC 0.30+: the crest of the scorer fades in and out.
+        if (hasImage2 && opts.image2 && /^https?:\/\//.test(opts.image2) && opts.image2.length <= 290) { body.image2 = opts.image2; }
+        if (hasHighlight && opts.highlight && body.image) { body.highlight = opts.highlight; }
         // NC 0.13+: high priority goes first and is shown even during quiet hours (civil protection).
         if (opts.priority === 'high') { body.priority = 'high'; }
         var item = { text: JSON.stringify(body), high: opts.priority === 'high' };
@@ -554,12 +590,24 @@ module.exports = function (ctx) {
         else if (kind === 'half') { title = t.half; icon = E.pause; }
         else if (kind === 'score') { title = t.score; icon = E.star; }
         else { title = t.end; icon = E.flag; }
+        // Both crests, home on the left, when the hub takes them and both exist; a goal highlights the side that scored.
+        var img = w.logo || '', img2 = '', hl = '';
+        if (hasImage2 && !m.race) {
+            var homeLogo = logoFor(w.kind, w.provider, w.sport, m.home.id), awayLogo = logoFor(w.kind, w.provider, w.sport, m.away.id);
+            if (homeLogo && awayLogo) {
+                img = homeLogo; img2 = awayLogo;
+                if (kind === 'goal' || kind === 'against') { hl = (kind === 'goal') === (String(m.home.id) === String(w.teamId)) ? 'image' : 'image2'; }
+            }
+        }
         banner(title, msg, level, icon, s, {
             category: (kind === 'goal' || kind === 'against' || kind === 'score') ? 'goal' : 'sport',
-            sound: w.sound ? (SOUND[kind] || 'chime') : '',
+            // The chosen sound name (or '' = hub default). Legacy boolean true was migrated to 'soft'.
+            sound: w.sound || '',
             group: false,
             mode: w.mode,
-            image: w.logo || '',
+            image: img,
+            image2: img2,
+            highlight: hl,
             volume: w.volume
         });
         addLog('sport', kind, title + ' - ' + msg);
@@ -664,10 +712,10 @@ module.exports = function (ctx) {
             levels: {}, anepc: !(cv.anepc === false), news: cv.news === true,
             keywords: clean(cv.keywords == null ? d.civ.keywords : cv.keywords, 220),
             interval: clamp(cv.interval, 5, 240, d.civ.interval),
-            seconds: clamp(cv.seconds, 3, 60, d.civ.seconds),
-            sound: !(cv.sound === false),
-            mode: byId(MODES, cv.mode) ? cv.mode : d.civ.mode,
-            volume: clamp(cv.volume, 10, 100, d.civ.volume)
+            seconds: clamp(cv.seconds, 0, 60, d.civ.seconds),
+            sound: normSound(cv.sound),
+            mode: normMode(cv.mode, d.civ.mode),
+            volume: clamp(cv.volume, 0, 100, d.civ.volume)
         };
         Object.keys(d.civ.levels).forEach(function (k) {
             o.civ.levels[k] = typeof (cv.levels && cv.levels[k]) === 'boolean' ? cv.levels[k] : d.civ.levels[k];
@@ -705,11 +753,11 @@ module.exports = function (ctx) {
         Object.keys(d.football.alerts).forEach(function (k) {
             o.football.alerts[k] = typeof (f.alerts && f.alerts[k]) === 'boolean' ? f.alerts[k] : d.football.alerts[k];
         });
-        o.football.goalSeconds = clamp(f.goalSeconds, 5, 60, d.football.goalSeconds);
-        o.football.otherSeconds = clamp(f.otherSeconds, 3, 30, d.football.otherSeconds);
-        o.football.sound = !(f.sound === false);
-        o.football.mode = byId(MODES, f.mode) ? f.mode : d.football.mode;
-        o.football.volume = clamp(f.volume, 10, 100, d.football.volume);
+        o.football.goalSeconds = clamp(f.goalSeconds, 0, 60, d.football.goalSeconds);
+        o.football.otherSeconds = clamp(f.otherSeconds, 0, 30, d.football.otherSeconds);
+        o.football.sound = normSound(f.sound);
+        o.football.mode = normMode(f.mode, d.football.mode);
+        o.football.volume = clamp(f.volume, 0, 100, d.football.volume);
         o.football.nextGame = {
             enabled: !(f.nextGame && f.nextGame.enabled === false),
             minutes: clamp(f.nextGame && f.nextGame.minutes, 0, 120, d.football.nextGame.minutes)
@@ -726,10 +774,10 @@ module.exports = function (ctx) {
         Object.keys(d.others.alerts).forEach(function (k) {
             o.others.alerts[k] = typeof (ob.alerts && ob.alerts[k]) === 'boolean' ? ob.alerts[k] : d.others.alerts[k];
         });
-        o.others.seconds = clamp(ob.seconds, 3, 30, d.others.seconds);
-        o.others.sound = !(ob.sound === false);
-        o.others.mode = byId(MODES, ob.mode) ? ob.mode : d.others.mode;
-        o.others.volume = clamp(ob.volume, 10, 100, d.others.volume);
+        o.others.seconds = clamp(ob.seconds, 0, 30, d.others.seconds);
+        o.others.sound = normSound(ob.sound);
+        o.others.mode = normMode(ob.mode, d.others.mode);
+        o.others.volume = clamp(ob.volume, 0, 100, d.others.volume);
 
         o.weather.custom = [];
         var cps = Array.isArray(w.custom) ? w.custom : [], cp, seenCp = {};
@@ -739,10 +787,10 @@ module.exports = function (ctx) {
         }
         o.weather.place = byId(allPlaces(o), w.place) ? w.place : d.weather.place;
         o.weather.interval = clamp(w.interval, 5, 240, d.weather.interval);
-        o.weather.seconds = clamp(w.seconds, 3, 30, d.weather.seconds);
-        o.weather.sound = w.sound === true;
-        o.weather.mode = byId(MODES, w.mode) ? w.mode : d.weather.mode;
-        o.weather.volume = clamp(w.volume, 10, 100, d.weather.volume);
+        o.weather.seconds = clamp(w.seconds, 0, 30, d.weather.seconds);
+        o.weather.sound = normSound(w.sound);
+        o.weather.mode = normMode(w.mode, d.weather.mode);
+        o.weather.volume = clamp(w.volume, 0, 100, d.weather.volume);
         o.weather.provider = byId(WEATHER_PROVIDERS, w.provider) ? w.provider : d.weather.provider;
         o.weather.when = byId(WEATHER_WHEN, w.when) ? w.when : d.weather.when;
         var wp = w.proactive || {}, dwp = d.weather.proactive;
@@ -764,11 +812,11 @@ module.exports = function (ctx) {
         }
         if (!o.news.feeds.length) { o.news.feeds = d.news.feeds.slice(0); }
         o.news.interval = clamp(n.interval, 5, 240, d.news.interval);
-        o.news.seconds = clamp(n.seconds, 3, 30, d.news.seconds);
+        o.news.seconds = clamp(n.seconds, 0, 30, d.news.seconds);
         o.news.count = clamp(n.count, 1, 3, d.news.count);
-        o.news.sound = n.sound === true;
-        o.news.mode = byId(MODES, n.mode) ? n.mode : d.news.mode;
-        o.news.volume = clamp(n.volume, 10, 100, d.news.volume);
+        o.news.sound = normSound(n.sound);
+        o.news.mode = normMode(n.mode, d.news.mode);
+        o.news.volume = clamp(n.volume, 0, 100, d.news.volume);
         return o;
     }
     function publicCfg() {
@@ -786,7 +834,8 @@ module.exports = function (ctx) {
         o.weatherProviders = WEATHER_PROVIDERS;
         o.weatherWhen = WEATHER_WHEN;
         o.feeds = FEEDS;
-        o.modes = MODES;
+        o.modes = allowedModes.slice(0);
+        o.sounds = allowedSounds || [];   // for the Sound selects in the panel
         return o;
     }
     // Public, read-only view of the last known state. Only status lines and match baselines:
@@ -911,7 +960,7 @@ module.exports = function (ctx) {
         persistNextWarned();
         var msg = g.home + ' \u00D7 ' + g.away + ' \u00B7 ' + g.line;
         banner(TITLE_PRE, msg, 'info', E.whistle, w.otherSeconds,
-            { category: 'reminder', sound: w.sound ? 'reward' : '', group: false, mode: w.mode, image: w.logo || '', volume: w.volume });
+            { category: 'reminder', sound: w.sound || '', group: false, mode: w.mode, image: w.logo || '', volume: w.volume });
         addLog('sport', 'next', msg);
     }
     function checkNext(ws) {
@@ -994,7 +1043,7 @@ module.exports = function (ctx) {
             last[key] = { at: Date.now(), state: m.state, desc: m.desc, our: 0, opp: 0, keys: {} };
             if (prev && m.state === 'post' && prev.state !== 'post' && w.alerts.end && once('st|' + m.id + '|end')) {
                 banner(TXT[w.lang].win + ': ' + m.home.name, lineOf(m), 'ok', E.flag, w.goalSeconds,
-                    { sound: w.sound ? 'success' : '', group: false, mode: w.mode, volume: w.volume });
+                    { sound: w.sound || '', group: false, mode: w.mode, volume: w.volume });
                 addLog('sport', 'race', m.home.name + ' - ' + m.desc);
             }
             return;
@@ -1278,7 +1327,7 @@ module.exports = function (ctx) {
         var lv = a.level, icon = (lv === 'red') ? E.no : E.warn;
         var level = (lv === 'red') ? 'alert' : (lv === 'orange' ? 'warn' : 'info');
         var mode = (lv === 'yellow') ? 'banner' : c.civ.mode;
-        var snd = (lv === 'yellow') ? '' : (c.civ.sound ? 'alert' : '');
+        var snd = (lv === 'yellow') ? '' : (c.civ.sound || '');
         var title = icon + ' ' + (a.source === 'IPMA' ? 'Prote\u00E7\u00E3o Civil' : a.source) + ' \u00B7 ' + a.title;
         var msg = (a.message || a.type) + (a.endsAt ? ' \u00B7 at\u00E9 ' + clean(String(a.endsAt).slice(0, 16), 16) : '');
         // Civil-protection warnings are not routine: NC 0.13+ shows high priority even in quiet hours.
@@ -1500,7 +1549,7 @@ module.exports = function (ctx) {
                 var short = place.name.replace(/\s*\([^)]*\)$/, '');
                 banner(wx.icon + ' ' + TXT[c.lang].weather + ' \u00B7 ' + short, wx.line,
                     (wx.rain >= 60 ? 'warn' : 'info'), wx.icon, w.seconds,
-                    { category: 'weather', sound: w.sound ? 'soft' : '', mode: w.mode, volume: w.volume });
+                    { category: 'weather', sound: w.sound || '', mode: w.mode, volume: w.volume });
                 addLog('weather', 'weather', wx.line);
             }
             schedule('weather', w.interval * 60000);
@@ -1609,9 +1658,9 @@ module.exports = function (ctx) {
             // Restore the ids already warned before a restart/TV reboot.
             var saved = rawCfg().nextNotified || {}, wk;
             for (wk in saved) { if (saved.hasOwnProperty(wk)) { nextWarned[wk] = true; } }
-            refreshSounds();
+            refreshApi();
             clearInterval(soundTimer);
-            soundTimer = setInterval(refreshSounds, 600000);
+            soundTimer = setInterval(refreshApi, 600000);
             kick('sport', 3000); kick('civ', 5000); kick('weather', 8000); kick('news', 13000);
         },
         stop: function () {
@@ -1664,6 +1713,7 @@ module.exports = function (ctx) {
             if (sub === 'clearlog' && req.method === 'POST') { log.length = 0; sendJson(res, 200, { ok: true }); return true; }
             if (sub === 'state' && req.method === 'GET') {
                 sendJson(res, 200, { config: publicCfg(), status: status, watches: watchStatus, next: nextList(), civ: civAlerts,
+                    lastSent: lastSent,
                     notify: { queued: bannerQueue.length, sentMinute: sendTimes.length }, health: providerHealth, log: log });
                 return true;
             }
@@ -1833,11 +1883,11 @@ module.exports = function (ctx) {
                     if (f.alerts && typeof f.alerts === 'object') {
                         Object.keys(c.football.alerts).forEach(function (k) { if (typeof f.alerts[k] === 'boolean') { c.football.alerts[k] = f.alerts[k]; } });
                     }
-                    if (f.goalSeconds !== undefined) { c.football.goalSeconds = clamp(f.goalSeconds, 5, 60, c.football.goalSeconds); }
-                    if (f.otherSeconds !== undefined) { c.football.otherSeconds = clamp(f.otherSeconds, 3, 30, c.football.otherSeconds); }
-                    if (typeof f.sound === 'boolean') { c.football.sound = f.sound; }
-                    if (f.mode !== undefined) { if (byId(MODES, f.mode)) { c.football.mode = f.mode; } }
-                    if (f.volume !== undefined) { c.football.volume = clamp(f.volume, 10, 100, c.football.volume); }
+                    if (f.goalSeconds !== undefined) { c.football.goalSeconds = clamp(f.goalSeconds, 0, 60, c.football.goalSeconds); }
+                    if (f.otherSeconds !== undefined) { c.football.otherSeconds = clamp(f.otherSeconds, 0, 30, c.football.otherSeconds); }
+                    if (f.sound !== undefined) { c.football.sound = normSound(f.sound); }
+                    if (f.mode !== undefined) { c.football.mode = normMode(f.mode, c.football.mode); }
+                    if (f.volume !== undefined) { c.football.volume = clamp(f.volume, 0, 100, c.football.volume); }
                     if (f.nextGame && typeof f.nextGame === 'object') {
                         if (typeof f.nextGame.enabled === 'boolean') { c.football.nextGame.enabled = f.nextGame.enabled; }
                         if (f.nextGame.minutes !== undefined) {
@@ -1860,10 +1910,10 @@ module.exports = function (ctx) {
                     if (ob.alerts && typeof ob.alerts === 'object') {
                         Object.keys(c.others.alerts).forEach(function (k) { if (typeof ob.alerts[k] === 'boolean') { c.others.alerts[k] = ob.alerts[k]; } });
                     }
-                    if (ob.seconds !== undefined) { c.others.seconds = clamp(ob.seconds, 3, 30, c.others.seconds); }
-                    if (typeof ob.sound === 'boolean') { c.others.sound = ob.sound; }
-                    if (ob.mode !== undefined) { if (byId(MODES, ob.mode)) { c.others.mode = ob.mode; } }
-                    if (ob.volume !== undefined) { c.others.volume = clamp(ob.volume, 10, 100, c.others.volume); }
+                    if (ob.seconds !== undefined) { c.others.seconds = clamp(ob.seconds, 0, 30, c.others.seconds); }
+                    if (ob.sound !== undefined) { c.others.sound = normSound(ob.sound); }
+                    if (ob.mode !== undefined) { c.others.mode = normMode(ob.mode, c.others.mode); }
+                    if (ob.volume !== undefined) { c.others.volume = clamp(ob.volume, 0, 100, c.others.volume); }
 
                     if (we.custom !== undefined) {
                         if (!Array.isArray(we.custom)) { return sendJson(res, 400, { error: 'custom must be a list' }); }
@@ -1894,10 +1944,10 @@ module.exports = function (ctx) {
                     if (typeof cv.news === 'boolean') { c.civ.news = cv.news; }
                     if (cv.keywords !== undefined) { c.civ.keywords = clean(cv.keywords, 220); }
                     if (cv.interval !== undefined) { c.civ.interval = clamp(cv.interval, 5, 240, c.civ.interval); }
-                    if (cv.seconds !== undefined) { c.civ.seconds = clamp(cv.seconds, 3, 60, c.civ.seconds); }
-                    if (typeof cv.sound === 'boolean') { c.civ.sound = cv.sound; }
-                    if (cv.mode !== undefined) { if (byId(MODES, cv.mode)) { c.civ.mode = cv.mode; } }
-                    if (cv.volume !== undefined) { c.civ.volume = clamp(cv.volume, 10, 100, c.civ.volume); }
+                    if (cv.seconds !== undefined) { c.civ.seconds = clamp(cv.seconds, 0, 60, c.civ.seconds); }
+                    if (cv.sound !== undefined) { c.civ.sound = normSound(cv.sound); }
+                    if (cv.mode !== undefined) { c.civ.mode = normMode(cv.mode, c.civ.mode); }
+                    if (cv.volume !== undefined) { c.civ.volume = clamp(cv.volume, 0, 100, c.civ.volume); }
 
                     if (sv.clubs !== undefined) {
                         if (!Array.isArray(sv.clubs)) { return sendJson(res, 400, { error: 'clubs must be a list' }); }
@@ -1916,10 +1966,10 @@ module.exports = function (ctx) {
                         c.weather.place = we.place;
                     }
                     if (we.interval !== undefined) { c.weather.interval = clamp(we.interval, 5, 240, c.weather.interval); }
-                    if (we.seconds !== undefined) { c.weather.seconds = clamp(we.seconds, 3, 30, c.weather.seconds); }
-                    if (typeof we.sound === 'boolean') { c.weather.sound = we.sound; }
-                    if (we.mode !== undefined) { if (byId(MODES, we.mode)) { c.weather.mode = we.mode; } }
-                    if (we.volume !== undefined) { c.weather.volume = clamp(we.volume, 10, 100, c.weather.volume); }
+                    if (we.seconds !== undefined) { c.weather.seconds = clamp(we.seconds, 0, 30, c.weather.seconds); }
+                    if (we.sound !== undefined) { c.weather.sound = normSound(we.sound); }
+                    if (we.mode !== undefined) { c.weather.mode = normMode(we.mode, c.weather.mode); }
+                    if (we.volume !== undefined) { c.weather.volume = clamp(we.volume, 0, 100, c.weather.volume); }
                     if (we.provider !== undefined) {
                         if (!byId(WEATHER_PROVIDERS, we.provider)) { return sendJson(res, 400, { error: 'unknown weather provider' }); }
                         c.weather.provider = we.provider;
@@ -1953,11 +2003,11 @@ module.exports = function (ctx) {
                         c.news.feeds = fl;
                     }
                     if (ne.interval !== undefined) { c.news.interval = clamp(ne.interval, 5, 240, c.news.interval); }
-                    if (ne.seconds !== undefined) { c.news.seconds = clamp(ne.seconds, 3, 30, c.news.seconds); }
+                    if (ne.seconds !== undefined) { c.news.seconds = clamp(ne.seconds, 0, 30, c.news.seconds); }
                     if (ne.count !== undefined) { c.news.count = clamp(ne.count, 1, 3, c.news.count); }
-                    if (typeof ne.sound === 'boolean') { c.news.sound = ne.sound; }
-                    if (ne.mode !== undefined) { if (byId(MODES, ne.mode)) { c.news.mode = ne.mode; } }
-                    if (ne.volume !== undefined) { c.news.volume = clamp(ne.volume, 10, 100, c.news.volume); }
+                    if (ne.sound !== undefined) { c.news.sound = normSound(ne.sound); }
+                    if (ne.mode !== undefined) { c.news.mode = normMode(ne.mode, c.news.mode); }
+                    if (ne.volume !== undefined) { c.news.volume = clamp(ne.volume, 0, 100, c.news.volume); }
 
                     if (b.apiKey !== undefined) {
                         var key = String(b.apiKey).trim();
@@ -1996,7 +2046,7 @@ module.exports = function (ctx) {
                     if (!cl) { return sendJson(res, 400, { error: 'unknown test club' }); }
                     var title = 'Golo! ' + cl.name, msg = cl.msg || ('Golo do ' + cl.name);
                     banner(title, msg, cl.level, '', 8, {
-                        category: 'goal', mode: 'overlay', theme: 'sport', image: cl.logo, group: false
+                        category: 'goal', mode: c.football.mode, theme: 'sport', image: cl.logo, highlight: 'image', group: false
                     });
                     addLog('test', 'goalSim', title + ' - ' + msg);
                     sendJson(res, 200, { ok: true, title: title, message: msg });
@@ -2016,7 +2066,7 @@ module.exports = function (ctx) {
                         var msg = ng ? (ng.home + ' \u00D7 ' + ng.away + ' \u00B7 ' + ng.line) :
                             (t.team + ' \u00D7 ' + t.test + ' \u00B7 ' + t.today + ' 20:30');
                         banner(title, msg, 'info', E.whistle, c.football.otherSeconds,
-                            { category: 'reminder', sound: c.football.sound ? 'reward' : '', group: false, mode: c.football.mode,
+                            { category: 'reminder', sound: c.football.sound || '', group: false, mode: c.football.mode,
                               image: logoFor('club', c.football.provider, 'soccer', club ? club.id : ''),
                               volume: c.football.volume });
                         addLog('test', 'next', msg);
@@ -2030,7 +2080,10 @@ module.exports = function (ctx) {
                         else { poll('civ', true); }
                         return;
                     }
+                    // The opponent of the test match is another followed club, so that there are two real crests.
+                    var rival = c.football.clubs.filter(function (x) { return !club || x.id !== club.id; })[0];
                     var w = {
+                        provider: c.football.provider, sport: 'soccer',
                         key: 'test', kind: 'club', name: club ? club.name : t.team, teamId: club ? club.id : '0',
                         alerts: club && club.alerts ? club.alerts : c.football.alerts,
                         goalSeconds: c.football.goalSeconds,
@@ -2049,9 +2102,9 @@ module.exports = function (ctx) {
                     var m = {
                         id: 'test', state: 'in', desc: t.test, clock: "22'",
                         home: { name: w.name, short: w.name, score: 1, id: w.teamId },
-                        away: { name: t.test, short: t.test, score: 0, id: '0' }
+                        away: { name: rival ? rival.name : t.test, short: rival ? rival.name : t.test, score: 0, id: rival ? rival.id : '0' }
                     };
-                    announce(known[kind] ? kind : 'goal', w, m, { player: t.test, minute: "22'", detail: t.test, team: t.test });
+                    announce(known[kind] ? kind : 'goal', w, m, { player: t.test, minute: "22'", detail: t.test, team: kind === 'against' ? m.away.short : t.test });
                     addLog('test', kind, line);
                     sendJson(res, 200, { ok: true });
                 });

@@ -82,7 +82,7 @@ function assert(ok, msg) { if (!ok) { throw new Error('FAILED: ' + msg); } conso
 
   await tick();
   assert(sent.length === 1 && /Penalty falhado/.test(sent[0].title) && /Luis Suarez/.test(sent[0].message), 'a saved penalty announces who missed it');
-  assert(sent[0].mode === 'overlay' && sent[0].group === false && sent[0].sound === 'reward', 'penalty uses the normal sport banner path');
+  assert(!sent[0].mode && sent[0].group === false && !sent[0].sound, 'penalty uses the normal sport banner path with hub defaults');
 
   sent = [];
   await tick();

@@ -1,10 +1,12 @@
 {
-  "version": "0.26.1",
+  "version": "0.30.1",
   "modes": [
     "both",
     "banner",
     "full",
-    "overlay"
+    "overlay",
+    "glass",
+    "panel"
   ],
   "levels": [
     "info",
@@ -31,6 +33,8 @@
     "duration",
     "icon",
     "image",
+    "image2",
+    "highlight",
     "app",
     "wallpaper",
     "theme",

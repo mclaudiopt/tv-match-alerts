@@ -87,6 +87,14 @@ Sending to the Notification Center: real 5 s time limit, the answer is read, up 
 
 Interface comum `VETRO-UI-SHARDS.md`: três separadores (Trabalho com sub-tabs, Definições, Sistema), cabeçalho com ícone 44px e frase, chips, EN/PT segmentado, cartões de Definições e Sistema em duas colunas com registo à direita. Sem cartão de silêncio e sem interruptor geral (backend não os suporta). 24/24 testes.
 
+"Predefinição do Notification Center" em som, volume, modo e duração: primeira opção vazia nos selects de Som/Modo e sliders a começar em 0; os campos não vão no POST e o hub aplica o que está definido por emissor/categoria. Booleano `sound` guardado migra para `soft`. O texto Ligado/Desligado foi retirado dos interruptores: só o toggle aparece.
+
+Alinhado com o Notification Center 0.29.0: `refreshApi()` lê `enums.sound` e `enums.mode` do hub, pelo que os selects de modo mostram `both`, `glass` e `panel` quando o hub os oferece (antes era lista fixa). A pré-visualização "Na TV" mostra o último aviso aceite pelo hub (`lastSent`), não a linha de um jogo antigo; rótulo `overlay` corrigido para "Barra em baixo"; ocupa agora toda a largura em todas as vistas (`.layout` em coluna, sticky removido), com os blocos de configuração por baixo. Separadores: Desporto, Tempo e Notícias passaram para o topo ao lado de Definições e Sistema (fim do separador "Trabalho"); Proteção Civil continua dentro de Tempo. Lista de clubes em matriz: clubes nas colunas, opções nas linhas (competições, notícias do clube, alertas) e um toggle em cada célula; cabeçalho só com "Remover" (sem "Herdar globais"). Clube novo começa com todos os alertas desligados, sem herdar os globais. IDs e `data-*` mantidos. 24/24 testes.
+
 ## 0.5.48 (2026-11-26)
 
 Night quiet (23h-07h) removed from weather and news.
+
+## 0.5.50
+
+Dois emblemas (casa e fora) e destaque de quem marcou, nos golos reais e nos testes.

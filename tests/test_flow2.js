@@ -129,8 +129,8 @@ function assert(ok, msg) { if (!ok) { throw new Error('FAILED: ' + msg); } conso
   assert(sent[0].title.indexOf('GOLO') > -1, 'goal banner title');
   assert(sent[0].source === 'tv-alerts', 'source is tv-alerts');
   assert(sent[0].group === false, 'group is disabled for sport');
-  assert(sent[0].sound === 'reward', 'sport uses the reward sound');
-  assert(sent[0].mode === 'overlay', 'default sport mode is overlay');
+  assert(!sent[0].sound, 'no sound field by default (the hub decides)');
+  assert(!sent[0].mode, 'no mode field by default (the hub decides)');
 
   // 3) opponent goal
   sent = [];

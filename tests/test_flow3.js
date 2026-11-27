@@ -164,7 +164,7 @@ function titles() { return sent.map(function (x) { return x.title + ' | ' + x.me
   offset += 70000; stage = 1;
   await post('poll', { module: 'sport' }); await wait(500);
   assert(sent.length === 1 && /SPORTING/.test(sent[0].title), 'goal announced for the first club');
-  assert(sent[0].sound === 'reward', 'sport notifications use reward by default');
+  assert(sent[0].sound === 'soft', 'legacy sound:true migrates to soft');
   assert(sent[0].volume === 40, 'goal uses the football volume from the config');
   assert(sent[0].image === 'https://a.espncdn.com/i/teamlogos/soccer/500/2250.png',
     'goal carries the club crest as the overlay icon');
@@ -187,7 +187,7 @@ function titles() { return sent.map(function (x) { return x.title + ' | ' + x.me
   await post('poll', { module: 'sport' }); await wait(200);
   console.log(titles().join('\n'));
   assert(sent.length === 1 && /Lakers 2-0 Celtics/.test(sent[0].message), 'other sport score change announced');
-  assert(sent[0].sound === 'reward', 'other sports also use reward');
+  assert(sent[0].sound === 'soft', 'other sports legacy sound:true migrates to soft');
   assert(sent[0].volume === 55, 'other sports use their own volume');
   assert(sent[0].image === 'https://a.espncdn.com/i/teamlogos/nba/500/13.png',
     'other sport carries its team crest');

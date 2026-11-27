@@ -314,6 +314,14 @@ Sending to the Notification Center: real 5 s time limit, the answer is read, up 
 
 The panel follows the common Shard interface: three tabs (Work with Sport/Weather/News sub-tabs, Settings, System), 44 px icon with a sentence, status chips, segmented EN/PT, Settings cards General/Notification/Sound/Backup, System in two columns with "Recently sent" on the right. The quiet-hours card and the global switch were removed — quiet hours belong to Notification Center and the Shard has no global `enabled`. Tested with 24/24 mocked tests.
 
+Sound, volume, mode and duration now default to "Notification Center default": the first option of every Sound/Mode select is empty and the sliders start at 0, so those fields are left out of the POST and the hub applies its own per-emitter/category values. A previously saved boolean sound is migrated to `soft`. Switch labels (On/Off, Ligado/Desligado) were removed; each toggle shows only the switch. The Shard reads both `enums.sound` and `enums.mode` from the hub at start and every 10 minutes, so new looks such as `glass` and `panel` appear in the panel automatically (as in EPG alerts).
+
+The "On the TV" preview shows the last notification accepted by the hub (`lastSent` in `/api/state`) instead of a stale match line. It now spans the full width in every view (`.layout` is a column flex, no sticky sidebar); the configuration blocks sit below it. Sport, Weather and News are now top-level tabs alongside Settings and System — the old "Work" tab and its sub-tabs are gone; Civil protection stays inside Weather. The club list is now a matrix: one column per club, one row per option (competition, club news, 10 alerts) and a toggle in each cell; each column header has only a Remove button. A newly added club starts with every alert off instead of inheriting the global switches. All input IDs and `data-*` attributes were preserved so the existing handlers keep working.
+
 ## 0.5.48 (2026-11-26)
 
 No night quiet any more: the 23h-07h switch of weather and news was removed. Quiet hours, if wanted, are set in the Notification Center.
+
+## 0.5.50
+
+Goals and test goals send both crests (image = home, image2 = away) and highlight the side that scored, when the Notification Center lists those features. The look is the one chosen in the Shard; the effect shows in glass and panel.

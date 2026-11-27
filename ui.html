@@ -48,11 +48,6 @@ h1 { font-size:20px; margin:0; font-weight:500; line-height:1.2; }
 .subtabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
 .subtabs button { background:var(--raised); color:var(--muted); border:1px solid var(--border); border-radius:var(--radius-control); padding:7px 12px; cursor:pointer; font-size:12px; font-weight:600; }
 .subtabs button.on { color:var(--text); border-color:var(--action); background:var(--surface); }
-.subtab { display:none; }
-.subtab.on { display:block; }
-.worktabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; border-bottom:1px solid var(--border); }
-.worktabs button { background:none; color:var(--muted); border:0; border-bottom:2px solid transparent; border-radius:0; min-height:44px; padding:8px 14px; cursor:pointer; font-size:14px; font-weight:500; }
-.worktabs button.on { color:var(--text); border-bottom-color:var(--accent); }
 .subsubtabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
 .subsubtabs button { background:var(--raised); color:var(--muted); border:1px solid var(--border); border-radius:var(--r); padding:7px 12px; cursor:pointer; font-size:12px; font-weight:600; }
 .subsubtabs button.on { color:var(--text); border-color:var(--action); background:var(--surface); }
@@ -71,12 +66,8 @@ label.f { display:block; font-size:12px; color:var(--dim); margin:10px 0 4px; }
 .switch input:checked { background:var(--action); border-color:var(--accent); }
 .switch input:checked::before { transform:translateX(16px); background:var(--text); }
 .switch input:disabled { opacity:.45; cursor:default; }
-.switch span { font-size:.875rem; color:var(--muted); min-width:24px; }
-.switch span::after { content:"Off"; }
-.switch input:checked + span::after { content:"On"; }
-html[lang=pt] .switch span { min-width:80px; }
-html[lang=pt] .switch span::after { content:"Desligado"; }
-html[lang=pt] .switch input:checked + span::after { content:"Ligado"; }
+/* No On/Off labels: only the switch itself (VETRO-UI-SHARDS.md, pedido do Marcelo 2026-11-27). */
+.switch span { display:none; }
 @media (forced-colors:active) { .switch input { appearance:auto; -webkit-appearance:auto; } .switch input::before { display:none; } }
 .modgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:8px 14px; margin-top:10px; }
 .modgrid .setting { margin:0; }
@@ -129,9 +120,10 @@ pre { white-space:pre-wrap; word-break:break-word; margin:0; font:11px/1.5 var(-
 
 /* VETRO-UI-SHARDS.md 0.19.0: preview on the left, one card per group, state chips, toast and drawer. */
 .lead { color:var(--dim); font-size:13px; margin:2px 0 12px; }
-.layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.9fr); gap:12px; align-items:start; }
+/* The "On the TV" preview spans the full width; configuration blocks follow below it. */
+.layout { display:flex; flex-direction:column; gap:12px; align-items:stretch; }
 .systemcols { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:12px; align-items:start; }
-.stage { display:flex; flex-direction:column; gap:12px; min-width:0; }
+.stage { display:flex; flex-direction:column; gap:12px; min-width:0; width:100%; position:static; }
 .stage .panel { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-surface); padding:14px; min-width:0; }
 .stage .panel h2 { display:flex; align-items:center; gap:12px; font-size:18px; color:var(--text); text-transform:none; letter-spacing:0; font-weight:500; margin:0 0 10px; }
 .section-icon { width:26px; height:26px; flex:none; fill:none; stroke:var(--accent); stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
@@ -174,8 +166,18 @@ table.api { width:100%; border-collapse:collapse; font-size:13px; }
 table.api td, table.api th { padding:6px 10px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
 table.api tr:last-child td { border-bottom:0; }
 table.api th { color:var(--dim); font-weight:500; }
-@media (max-width:1000px) { .layout, .systemcols { grid-template-columns:minmax(0,1fr); } .stage { position:static; } }
-@media (min-width:1001px) { .stage { position:sticky; top:64px; } }
+/* Club matrix: clubs in columns, options in rows, a toggle in each cell. */
+table.matrix { width:100%; border-collapse:collapse; font-size:13px; }
+table.matrix th, table.matrix td { padding:8px 10px; border-bottom:1px solid var(--border); text-align:left; vertical-align:middle; }
+table.matrix thead th { color:var(--muted); font-weight:500; border-bottom:2px solid var(--border); }
+table.matrix tbody th { color:var(--fg); font-weight:500; white-space:nowrap; }
+table.matrix tbody tr:last-child th, table.matrix tbody tr:last-child td { border-bottom:0; }
+table.matrix .head-club { display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
+table.matrix .head-club .row { margin-top:0; }
+table.matrix .setting { margin:0; justify-content:center; }
+table.matrix .switch { min-height:36px; }
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+@media (max-width:1000px) { .systemcols { grid-template-columns:minmax(0,1fr); } }
 @media (max-width:620px) { .head { flex-wrap:wrap; } .head-id { flex:1; } .head-lead { display:none; } .lang { order:2; } .chips { order:3; flex-basis:100%; justify-content:flex-start; flex-wrap:wrap; } }
 </style>
 </head>
@@ -195,27 +197,21 @@ table.api th { color:var(--dim); font-weight:500; }
 </div>
 
 <div class="tabs" role="tablist" aria-label="Sections">
-  <button type="button" id="tabbtn-work" role="tab" aria-selected="true" aria-controls="tab-work" data-tab="work" class="on" data-t="tabWork">Work</button>
+  <button type="button" id="tabbtn-sport" role="tab" aria-selected="true" aria-controls="tab-sport" data-tab="sport" class="on" data-t="tabSport">Sport</button>
+  <button type="button" id="tabbtn-weather" role="tab" aria-selected="false" aria-controls="tab-weather" data-tab="weather" data-t="tabWeather">Weather</button>
+  <button type="button" id="tabbtn-news" role="tab" aria-selected="false" aria-controls="tab-news" data-tab="news" data-t="tabNews">News</button>
   <button type="button" id="tabbtn-setup" role="tab" aria-selected="false" aria-controls="tab-setup" data-tab="settings" data-t="tabSettings">Settings</button>
   <button type="button" id="tabbtn-tech" role="tab" aria-selected="false" aria-controls="tab-tech" data-tab="system" data-t="tabSystem">System</button>
 </div>
 
-<!-- ============ WORK: Sport / Weather / News ============ -->
-<div class="tab on" id="tab-work" role="tabpanel" aria-labelledby="tabbtn-work">
-  <div class="worktabs" role="tablist" aria-label="Work">
-    <button type="button" id="tabbtn-sport" role="tab" aria-selected="true" aria-controls="tab-sport" data-subtab="sport" data-t="tabSport" class="on">Sport</button>
-    <button type="button" id="tabbtn-weather" role="tab" aria-selected="false" aria-controls="tab-weather" data-subtab="weather" data-t="tabWeather">Weather</button>
-    <button type="button" id="tabbtn-news" role="tab" aria-selected="false" aria-controls="tab-news" data-subtab="news" data-t="tabNews">News</button>
-  </div>
-
 <!-- ============ WEATHER ============ -->
-<div class="subtab" id="tab-weather" role="tabpanel" aria-labelledby="tabbtn-weather" hidden>
+<div class="tab" id="tab-weather" role="tabpanel" aria-labelledby="tabbtn-weather" hidden>
   <div class="layout">
   <div class="stage">
     <section class="panel">
       <h2><svg class="section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15h14a4 4 0 0 0-1-7.9A5.5 5.5 0 0 0 5.5 8 3.5 3.5 0 0 0 3 15z"/><path d="M6 19h9"/></svg><span data-t="weatherCard">Weather</span></h2>
       <div class="preview-card"><span class="preview-kicker" data-t="onTv">On the TV</span>
-        <div class="live" id="weather-line"></div>
+        <div class="live" id="pv-w-line"></div>
         <p data-t="previewWeather">The next weather alert will look like this.</p>
         <div><span class="chip" id="pv-w-mode">banner</span><span class="chip" id="pv-w-proactive">-</span></div>
       </div>
@@ -268,7 +264,7 @@ table.api th { color:var(--dim); font-weight:500; }
             <div class="setting"><label for="wp-storm" id="wp-storm-name" data-t="wStorm">Thunderstorm</label><label class="switch"><input type="checkbox" role="switch" id="wp-storm" aria-labelledby="wp-storm-name"><span aria-hidden="true"></span></label></div>
           </div>
           <div>
-            <div class="dur"><label for="wp-rainpct" data-t="wpRainPct">Rain %</label><input type="number" id="wp-rainpct" min="10" max="100" step="5"><b></b></div>
+            <div class="dur"><label for="wp-rainpct" data-t="wpRainPct">Rain %</label><input type="number" id="wp-rainpct" min="0" max="100" step="5"><b></b></div>
             <div class="dur"><label for="wp-windkmh" data-t="wpWindKmh">Wind km/h</label><input type="number" id="wp-windkmh" min="10" max="120" step="5"><b></b></div>
             <div class="dur"><label for="wp-heatc" data-t="wpHeatC">Heat &deg;C</label><input type="number" id="wp-heatc" min="20" max="50"><b></b></div>
             <div class="dur"><label for="wp-stormcode" data-t="wpStormCode">Storm code &ge;</label><input type="number" id="wp-stormcode" min="80" max="99"><b></b></div>
@@ -318,7 +314,7 @@ table.api th { color:var(--dim); font-weight:500; }
 </div>
 
 <!-- ============ NEWS ============ -->
-<div class="subtab" id="tab-news" role="tabpanel" aria-labelledby="tabbtn-news" hidden>
+<div class="tab" id="tab-news" role="tabpanel" aria-labelledby="tabbtn-news" hidden>
   <div class="layout">
   <div class="stage">
     <section class="panel">
@@ -362,7 +358,7 @@ table.api th { color:var(--dim); font-weight:500; }
 </div>
 
 <!-- ============ FOOTBALL ============ -->
-<div class="subtab on" id="tab-sport" role="tabpanel" aria-labelledby="tabbtn-sport">
+<div class="tab on" id="tab-sport" role="tabpanel" aria-labelledby="tabbtn-sport">
   <div class="subsubtabs" role="tablist" aria-label="Sport sections">
     <button type="button" id="subbtn-football" role="tab" aria-selected="true" aria-controls="subtab-football" data-subtab="football" data-t="tabFootball">Football</button>
     <button type="button" id="subbtn-others" role="tab" aria-selected="false" aria-controls="subtab-others" data-subtab="others" data-t="tabOthers">Other sports</button>
@@ -433,36 +429,6 @@ table.api th { color:var(--dim); font-weight:500; }
       </details>
     </div>
     <div class="card wide">
-      <details class="sec">
-        <summary data-t="simTitle">Goal simulation</summary>
-        <div class="small" data-t="simNote">One button per club. Sends a real (silent) notification through Notification Center.</div>
-        <div id="sim-grid" class="simgrid"></div>
-        <div class="msg" id="sim-msg" aria-live="polite"></div>
-      </details>
-      <details class="sec">
-        <summary data-t="simEdit">Edit the test clubs</summary>
-        <div class="grid">
-          <div>
-            <label class="f" for="sim-name" data-t="team">Team</label>
-            <input type="text" id="sim-name" placeholder="Sporting">
-          </div>
-          <div>
-            <label class="f" for="sim-id" data-t="simId">ESPN id</label>
-            <input type="text" id="sim-id" placeholder="2250">
-          </div>
-          <div>
-            <label class="f" for="sim-text" data-t="simMsg">Message</label>
-            <input type="text" id="sim-text" placeholder="Sporting 1-0 Benfica">
-          </div>
-          <div>
-            <label class="f" for="sim-level" data-t="simColor">Stripe colour</label>
-            <select id="sim-level"><option value="ok">ok - verde</option><option value="info">info - azul</option><option value="warn">warn - amarelo</option><option value="alert">alert - vermelho</option></select>
-          </div>
-        </div>
-        <div class="row"><button type="button" class="g" id="sim-add" data-t="addClub">Add club</button></div>
-      </details>
-    </div>
-    <div class="card wide">
       <label class="f" for="test-club" data-t="testWith">Test with</label>
       <select id="test-club" style="max-width:340px"></select>
       <div class="row">
@@ -486,6 +452,7 @@ table.api th { color:var(--dim); font-weight:500; }
     <section class="panel">
       <h2><svg class="section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V4M4 20h16"/><path d="M8 16l4-5 3 2 4-6"/></svg><span data-t="tabOthers">Other sports</span></h2>
       <div class="preview-card"><span class="preview-kicker" data-t="onTv">On the TV</span><b data-t="tabOthers">Other sports</b>
+        <div class="live" id="pv-o-line"></div>
         <p data-t="previewOthers">Scores from NBA, MLB, NHL, NFL and F1 picks.</p>
         <div><span class="chip" id="pv-o-mode">banner</span></div>
       </div>
@@ -529,8 +496,6 @@ table.api th { color:var(--dim); font-weight:500; }
 </div>
 </div>
 
-</div><!-- /tab-work -->
-
 <!-- ============ SETTINGS ============ -->
 <div class="tab" id="tab-setup" role="tabpanel" aria-labelledby="tabbtn-setup" hidden>
   <div class="stack">
@@ -563,57 +528,65 @@ table.api th { color:var(--dim); font-weight:500; }
             </section>
           </div>
           <div class="stack">
-            <div class="small" data-t="tabFootball">Football</div>
-            <label class="f" for="f-mode" data-t="mode">Mode</label>
-            <select id="f-mode"></select>
-            <div class="dur"><label for="f-goalsec" data-t="goalsec">Goal banner (s)</label><input type="range" id="f-goalsec" min="5" max="60"><b id="f-goalsecv"></b></div>
-            <div class="dur"><label for="f-othersec" data-t="othersec">Other banners (s)</label><input type="range" id="f-othersec" min="3" max="30"><b id="f-othersecv"></b></div>
-            <div class="small" data-t="tabOthers">Other sports</div>
-            <label class="f" for="o-mode" data-t="mode">Mode</label>
-            <select id="o-mode"></select>
-            <div class="dur"><label for="o-seconds" data-t="seconds">Banner (s)</label><input type="range" id="o-seconds" min="3" max="30"><b id="o-secondsv"></b></div>
-            <div class="small" data-t="weatherCard">Weather</div>
-            <label class="f" for="w-mode" data-t="mode">Mode</label>
-            <select id="w-mode"></select>
-            <div class="dur"><label for="w-seconds" data-t="seconds">Banner (s)</label><input type="range" id="w-seconds" min="3" max="30"><b id="w-secondsv"></b></div>
-            <div class="small" data-t="tabNews">News</div>
-            <label class="f" for="n-mode" data-t="mode">Mode</label>
-            <select id="n-mode"></select>
-            <div class="dur"><label for="n-seconds" data-t="seconds">Banner (s)</label><input type="range" id="n-seconds" min="3" max="30"><b id="n-secondsv"></b></div>
-            <div class="small" data-t="tabCiv">Civil protection</div>
-            <label class="f" for="civ-mode" data-t="mode">Mode</label>
-            <select id="civ-mode"></select>
-            <div class="dur"><label for="civ-seconds" data-t="seconds">Banner (s)</label><input type="range" id="civ-seconds" min="3" max="60"><b id="civ-secondsv"></b></div>
+            <details class="sec" open>
+              <summary data-t="tabFootball">Football</summary>
+              <div class="stack">
+                <label class="f" for="f-mode" data-t="mode">Mode</label>
+                <select id="f-mode"><option value="" data-t="ncDefault">Notification Center default</option></select>
+                <div class="dur"><label for="f-goalsec" data-t="goalsec">Goal banner (s)</label><input type="range" id="f-goalsec" min="0" max="60"><b id="f-goalsecv"></b></div>
+                <div class="dur"><label for="f-othersec" data-t="othersec">Other banners (s)</label><input type="range" id="f-othersec" min="0" max="30"><b id="f-othersecv"></b></div>
+                <label class="f" for="f-sound" data-t="sound">Sound</label>
+                <select id="f-sound"><option value="" data-t="ncDefault">Notification Center default</option></select>
+                <div class="dur"><label for="f-volume" data-t="volume">Volume</label><input type="range" id="f-volume" min="0" max="100" step="5"><b id="f-volumev"></b></div>
+              </div>
+            </details>
+            <details class="sec">
+              <summary data-t="tabOthers">Other sports</summary>
+              <div class="stack">
+                <label class="f" for="o-mode" data-t="mode">Mode</label>
+                <select id="o-mode"><option value="" data-t="ncDefault">Notification Center default</option></select>
+                <div class="dur"><label for="o-seconds" data-t="seconds">Banner (s)</label><input type="range" id="o-seconds" min="0" max="30"><b id="o-secondsv"></b></div>
+                <label class="f" for="o-sound" data-t="sound">Sound</label>
+                <select id="o-sound"><option value="" data-t="ncDefault">Notification Center default</option></select>
+                <div class="dur"><label for="o-volume" data-t="volume">Volume</label><input type="range" id="o-volume" min="0" max="100" step="5"><b id="o-volumev"></b></div>
+              </div>
+            </details>
+            <details class="sec">
+              <summary data-t="weatherCard">Weather</summary>
+              <div class="stack">
+                <label class="f" for="w-mode" data-t="mode">Mode</label>
+                <select id="w-mode"><option value="" data-t="ncDefault">Notification Center default</option></select>
+                <div class="dur"><label for="w-seconds" data-t="seconds">Banner (s)</label><input type="range" id="w-seconds" min="0" max="30"><b id="w-secondsv"></b></div>
+                <label class="f" for="w-sound" data-t="sound">Sound</label>
+                <select id="w-sound"><option value="" data-t="ncDefault">Notification Center default</option></select>
+                <div class="dur"><label for="w-volume" data-t="volume">Volume</label><input type="range" id="w-volume" min="0" max="100" step="5"><b id="w-volumev"></b></div>
+              </div>
+            </details>
+            <details class="sec">
+              <summary data-t="tabNews">News</summary>
+              <div class="stack">
+                <label class="f" for="n-mode" data-t="mode">Mode</label>
+                <select id="n-mode"><option value="" data-t="ncDefault">Notification Center default</option></select>
+                <div class="dur"><label for="n-seconds" data-t="seconds">Banner (s)</label><input type="range" id="n-seconds" min="0" max="30"><b id="n-secondsv"></b></div>
+                <label class="f" for="n-sound" data-t="sound">Sound</label>
+                <select id="n-sound"><option value="" data-t="ncDefault">Notification Center default</option></select>
+                <div class="dur"><label for="n-volume" data-t="volume">Volume</label><input type="range" id="n-volume" min="0" max="100" step="5"><b id="n-volumev"></b></div>
+              </div>
+            </details>
+            <details class="sec">
+              <summary data-t="tabCiv">Civil protection</summary>
+              <div class="stack">
+                <label class="f" for="civ-mode" data-t="mode">Mode</label>
+                <select id="civ-mode"><option value="" data-t="ncDefault">Notification Center default</option></select>
+                <div class="dur"><label for="civ-seconds" data-t="seconds">Banner (s)</label><input type="range" id="civ-seconds" min="0" max="60"><b id="civ-secondsv"></b></div>
+                <label class="f" for="civ-sound" data-t="sound">Sound</label>
+                <select id="civ-sound"><option value="" data-t="ncDefault">Notification Center default</option></select>
+                <div class="dur"><label for="civ-volume" data-t="volume">Volume</label><input type="range" id="civ-volume" min="0" max="100" step="5"><b id="civ-volumev"></b></div>
+              </div>
+            </details>
           </div>
         </div>
         <div class="row"><button type="button" class="g" id="test-all" data-t="testAll">Test</button></div>
-      </details>
-    </div>
-
-    <div class="card wide">
-      <details class="sec" open>
-        <summary data-t="soundCard">Sound</summary>
-        <div class="grid">
-          <div>
-            <div class="small" data-t="tabFootball">Football</div>
-            <div class="setting"><label for="f-sound" id="f-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="f-sound" aria-labelledby="f-sound-name"><span aria-hidden="true"></span></label></div>
-            <div class="dur"><label for="f-volume" data-t="volume">Volume</label><input type="range" id="f-volume" min="10" max="100" step="5"><b id="f-volumev"></b></div>
-            <div class="small" data-t="tabOthers">Other sports</div>
-            <div class="setting"><label for="o-sound" id="o-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="o-sound" aria-labelledby="o-sound-name"><span aria-hidden="true"></span></label></div>
-            <div class="dur"><label for="o-volume" data-t="volume">Volume</label><input type="range" id="o-volume" min="10" max="100" step="5"><b id="o-volumev"></b></div>
-          </div>
-          <div>
-            <div class="small" data-t="weatherCard">Weather</div>
-            <div class="setting"><label for="w-sound" id="w-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="w-sound" aria-labelledby="w-sound-name"><span aria-hidden="true"></span></label></div>
-            <div class="dur"><label for="w-volume" data-t="volume">Volume</label><input type="range" id="w-volume" min="10" max="100" step="5"><b id="w-volumev"></b></div>
-            <div class="small" data-t="tabNews">News</div>
-            <div class="setting"><label for="n-sound" id="n-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="n-sound" aria-labelledby="n-sound-name"><span aria-hidden="true"></span></label></div>
-            <div class="dur"><label for="n-volume" data-t="volume">Volume</label><input type="range" id="n-volume" min="10" max="100" step="5"><b id="n-volumev"></b></div>
-            <div class="small" data-t="tabCiv">Civil protection</div>
-            <div class="setting"><label for="civ-sound" id="civ-sound-name" data-t="sound">Sound</label><label class="switch"><input type="checkbox" role="switch" id="civ-sound" aria-labelledby="civ-sound-name"><span aria-hidden="true"></span></label></div>
-            <div class="dur"><label for="civ-volume" data-t="volume">Volume</label><input type="range" id="civ-volume" min="10" max="100" step="5"><b id="civ-volumev"></b></div>
-          </div>
-        </div>
       </details>
     </div>
 
@@ -752,7 +725,7 @@ table.api th { color:var(--dim); font-weight:500; }
       err:"Error: ", sent:"Test sent.", loading:"Loading...", noTeams:"No team list for this league.",
       keyok:"Key OK - remaining today: ", keynone:"No key saved yet.", keyset:"A key is saved.",
       onlysoccer:"API-Football works for football only.", chooseOne:"Pick at least one source.",
-      clubNewsShort:"Club news", add:"Add", mode_banner:"Banner", mode_full:"Full screen", mode_overlay:"Bottom toast",
+      clubNewsShort:"Club news", add:"Add", mode_banner:"Banner", mode_full:"Full screen", mode_overlay:"Bar", mode_both:"Both", mode_glass:"Glass bar", mode_panel:"Panel",
       addPlaceTitle:"Add a place", addPlaceNote:"search by name", find:"Find", addPlace:"Add selected", findFirst:"Search for a place first.",
       noPlaces:"No place found.", found:"Found: ", placeAdded:"Added", placeRemoved:"Removed",
       none:"None", noSport:"Choose a sport first.",
@@ -768,7 +741,7 @@ table.api th { color:var(--dim); font-weight:500; }
       wpRainPct:"Rain %", wpWindKmh:"Wind km/h", wpHeatC:"Heat \u00B0C", wpStormCode:"Storm code \u2265",
       clubAlertsTitle:"Alerts for this club", custom:"custom", inherited:"inherited (global)", useGlobal:"Use global",
       tabSim:"Test goals", simTitle:"Goal simulation", simNote:"One button per club. Sends a real (silent) notification through Notification Center.",
-      simEdit:"Edit the test clubs", simId:"ESPN id", simMsg:"Message", simColor:"Stripe colour", volume:"Volume",
+      simEdit:"Edit the test clubs", simId:"ESPN id", simMsg:"Message", simColor:"Stripe colour", volume:"Volume", ncDefault:"Notification Center default",
       lead:"Alerts on the TV, sent through the Notification Center.", preview:"Preview", onTv:"On the TV", previewHelp:"What changes on the TV",
       previewSetup:"Each module sends its own alerts through the Notification Center.", previewHelpSetup:"Only the modules switched on here can show banners. Nothing is drawn by this panel.",
       previewWeather:"The next weather alert will look like this.", previewHelpWeather:"The place and interval chosen here are used by every weather banner; style is in Settings.",
@@ -813,7 +786,7 @@ table.api th { color:var(--dim); font-weight:500; }
       err:"Erro: ", sent:"Teste enviado.", loading:"A carregar...", noTeams:"Sem lista de equipas para esta liga.",
       keyok:"Chave v\u00E1lida - restantes hoje: ", keynone:"Ainda sem chave.", keyset:"H\u00E1 uma chave guardada.",
       onlysoccer:"A API-Football s\u00F3 funciona para futebol.", chooseOne:"Escolha pelo menos uma fonte.",
-      clubNewsShort:"Not\u00EDcias do clube", add:"Adicionar", mode_banner:"Banner", mode_full:"Ecr\u00E3 inteiro", mode_overlay:"Bottom toast",
+      clubNewsShort:"Not\u00EDcias do clube", add:"Adicionar", mode_banner:"Banner", mode_full:"Ecr\u00E3 inteiro", mode_overlay:"Barra", mode_both:"Ambos", mode_glass:"Barra de vidro", mode_panel:"Painel",
       addPlaceTitle:"Adicionar local", addPlaceNote:"procurar por nome", find:"Procurar", addPlace:"Adicionar selecionado", findFirst:"Primeiro procura um local.",
       noPlaces:"Nenhum local encontrado.", found:"Encontrados: ", placeAdded:"Adicionado", placeRemoved:"Removido",
       none:"Nenhum", noSport:"Escolhe primeiro um desporto.",
@@ -829,7 +802,7 @@ table.api th { color:var(--dim); font-weight:500; }
       wpRainPct:"Chuva %", wpWindKmh:"Vento km/h", wpHeatC:"Calor \u00B0C", wpStormCode:"C\u00F3digo trovoada \u2265",
       clubAlertsTitle:"Alertas deste clube", custom:"personalizados", inherited:"herdados (globais)", useGlobal:"Herdar globais",
       tabSim:"Simular golos", simTitle:"Simula\u00E7\u00E3o de golos", simNote:"Um bot\u00E3o por clube. Envia uma notifica\u00E7\u00E3o real (sem som) pelo Notification Center.",
-      simEdit:"Editar clubes de teste", simId:"Id ESPN", simMsg:"Mensagem", simColor:"Cor da faixa", volume:"Volume",
+      simEdit:"Editar clubes de teste", simId:"Id ESPN", simMsg:"Mensagem", simColor:"Cor da faixa", volume:"Volume", ncDefault:"Predefini\u00E7\u00E3o do Notification Center",
       lead:"Avisos na TV, enviados pelo Notification Center.", preview:"Pr\u00E9-visualiza\u00E7\u00E3o", onTv:"Na TV", previewHelp:"O que muda na TV",
       previewSetup:"Cada m\u00F3dulo envia os seus avisos pelo Notification Center.", previewHelpSetup:"S\u00F3 os m\u00F3dulos ligados aqui podem mostrar avisos. Este painel n\u00E3o desenha nada na TV.",
       previewWeather:"O pr\u00F3ximo aviso de tempo ter\u00E1 este aspeto.", previewHelpWeather:"O local e o intervalo escolhidos aqui s\u00E3o usados em todos os avisos de tempo; o estilo est\u00E1 em Defini\u00E7\u00F5es.",
@@ -859,7 +832,7 @@ table.api th { color:var(--dim); font-weight:500; }
       e.className = "msg ok";
     }
   }
-  var clubs = [], picks = [], feeds = [], geoResults = [], simClubs = [], pickListError = false;
+  var clubs = [], picks = [], feeds = [], geoResults = [], pickListError = false;
   var CLUB_ALERTS = [
     ["goal","a_goal"], ["against","a_against"], ["card","a_card"], ["sub","a_sub"],
     ["varNo","a_var"], ["penalty","a_pen"], ["penMiss","a_penMiss"], ["start","a_start"], ["half","a_half"], ["end","a_end"]
@@ -985,6 +958,7 @@ table.api th { color:var(--dim); font-weight:500; }
     if (!e) { return; }
     e.textContent = text; e.className = "chip" + (cls ? " " + cls : "");
   }
+  function modeLabel(m) { return m ? tr("mode_" + m) : tr("ncDefault"); }
   // One line of status chips in the header; the same values are repeated as rows in System.
   function updateHeader() {
     var mods = ["sport", "weather", "news"], i, on = 0;
@@ -1024,19 +998,23 @@ table.api th { color:var(--dim); font-weight:500; }
     chip("pv-mod-sport", tr("sport"), cfg.modules.sport ? "ok" : "");
     chip("pv-mod-weather", tr("weather"), cfg.modules.weather ? "ok" : "");
     chip("pv-mod-news", tr("news"), cfg.modules.news ? "ok" : "");
-    chip("pv-w-mode", tr("mode_" + cfg.weather.mode), "");
+    chip("pv-w-mode", modeLabel(cfg.weather.mode), "");
     chip("pv-w-proactive", (cfg.weather.proactive && cfg.weather.proactive.enabled) ? tr("wpTitle") : tr("none"), (cfg.weather.proactive && cfg.weather.proactive.enabled) ? "ok" : "");
-    chip("pv-n-mode", tr("mode_" + cfg.news.mode), "");
+    chip("pv-n-mode", modeLabel(cfg.news.mode), "");
     chip("pv-n-count", String(cfg.news.count), "ok");
-    chip("pv-f-mode", tr("mode_" + cfg.football.mode), "");
+    chip("pv-f-mode", modeLabel(cfg.football.mode), "");
     chip("pv-f-next", (cfg.football.nextGame && cfg.football.nextGame.enabled) ? tr("nextWarn") : tr("none"), (cfg.football.nextGame && cfg.football.nextGame.enabled) ? "ok" : "");
-    chip("pv-o-mode", tr("mode_" + cfg.others.mode), "");
+    chip("pv-o-mode", modeLabel(cfg.others.mode), "");
     chip("pv-shard", cfg.version ? "v" + cfg.version : tr("loading"), "ok");
     chip("pv-nc", tr("queued") + ": " + ((lastState && lastState.notify) ? lastState.notify.queued : 0), "");
     chip("pv-log", ((lastState && lastState.log) ? lastState.log.length : 0) + " " + tr("diagLog"), "");
-    var pn = $("pv-news-line"), ps = $("pv-sport-line");
-    if (pn) { pn.textContent = $("news-line").textContent || tr("noneyet"); }
-    if (ps) { ps.textContent = $("sport-line").textContent || "-"; }
+    // "On the TV" = the last notification the hub accepted, not a stale match/weather line.
+    var sent = (lastState && lastState.lastSent) || null;
+    var line = sent ? (sent.title + (sent.message ? ' - ' + sent.message : '')) : tr("noneyet");
+    var pvIds = ["pv-sport-line", "pv-news-line", "pv-w-line", "pv-o-line"];
+    for (var pi = 0; pi < pvIds.length; pi++) {
+      if ($(pvIds[pi])) { $(pvIds[pi]).textContent = line; }
+    }
     updateHeader();
   }
   function api(path, body) {
@@ -1062,12 +1040,22 @@ table.api th { color:var(--dim); font-weight:500; }
     if (value) { el.value = value; }
   }
   function fillMode(el, value) {
-    el.innerHTML = ["banner", "full", "overlay"].map(function (id) {
-      return '<option value="' + id + '">' + esc(tr("mode_" + id)) + "</option>";
+    var list = (cfg && cfg.modes) || ["banner", "full", "overlay"];
+    el.innerHTML = [""].concat(list).map(function (id) {
+      return '<option value="' + id + '">' + (id === "" ? esc(tr("ncDefault")) : esc(tr("mode_" + id))) + "</option>";
     }).join("");
-    el.value = value || "banner";
+    el.value = value || "";
   }
-  function range(id, value) { $(id).value = value; $(id + "v").textContent = value; }
+  // The hub publishes its sound list in /api/state (cfg.sounds). The first, empty option means
+  // "Notification Center default": the field is then omitted from the config/notify payload.
+  function fillSound(el, value) {
+    var list = (cfg && cfg.sounds) || [];
+    el.innerHTML = [""].concat(list).map(function (id) {
+      return '<option value="' + esc(id) + '">' + (id === "" ? esc(tr("ncDefault")) : esc(id)) + "</option>";
+    }).join("");
+    el.value = value || "";
+  }
+  function range(id, value) { $(id).value = value; $(id + "v").textContent = value === 0 ? tr("ncDefault") : value; }
 
   // ---- lists ---------------------------------------------------------------------------------------------------------------
   function compsFor(league) {
@@ -1079,35 +1067,59 @@ table.api th { color:var(--dim); font-weight:500; }
     }
     return out;
   }
+  // Matrix: one column per club, one row per option, a switch in each cell. IDs and data-* attrs
+  // are unchanged so the existing change/click handlers keep working.
   function renderClubs() {
-    var box = $("clubs"), i, j, html = "";
+    var box = $("clubs"), i, j, k, html = "", allComps = [], seen = {};
     if (!clubs.length) { box.innerHTML = '<div class="msg">' + esc(tr("noClubs")) + "</div>"; return; }
+    // Union of every club's competitions, in first-seen order.
     for (i = 0; i < clubs.length; i++) {
-      var cl = clubs[i], comps = compsFor(cl.league);
-      html += '<div class="club" data-id="' + esc(cl.id) + '">';
-      html += '<div class="club-head"><b>' + esc(cl.name) + '</b><span class="tag">' + esc(cl.league) + "</span>";
-      html += '<button type="button" class="x" data-act="rm">' + esc(tr("remove")) + "</button></div>";
-      html += '<div class="comps">';
-      for (j = 0; j < comps.length; j++) {
-        html += '<div class="setting"><label for="cmp-' + esc(cl.id) + '-' + j + '" id="cmp-' + esc(cl.id) + '-' + j + '-name">' + esc(comps[j].name) + '</label>' +
-          '<label class="switch"><input type="checkbox" role="switch" id="cmp-' + esc(cl.id) + '-' + j + '" data-comp="' + esc(comps[j].id) + '" aria-labelledby="cmp-' + esc(cl.id) + '-' + j + '-name"' +
-          (cl.comps.indexOf(comps[j].id) >= 0 ? " checked" : "") + '><span aria-hidden="true"></span></label></div>';
+      var cs = compsFor(clubs[i].league);
+      for (j = 0; j < cs.length; j++) {
+        if (!seen[cs[j].id]) { seen[cs[j].id] = true; allComps.push(cs[j]); }
       }
-      html += "</div>";
-      html += '<div class="setting"><label for="cnews-' + esc(cl.id) + '" id="cnews-' + esc(cl.id) + '-name">' + esc(tr("clubNewsShort")) + '</label>' +
-        '<label class="switch"><input type="checkbox" role="switch" id="cnews-' + esc(cl.id) + '" data-act="news" aria-labelledby="cnews-' + esc(cl.id) + '-name"' + (cl.news ? " checked" : "") + '><span aria-hidden="true"></span></label></div>';
-      html += '<div class="small" style="margin-top:6px">' + esc(tr("clubAlertsTitle")) + ": " +
-        (cl.alerts ? esc(tr("custom")) : esc(tr("inherited"))) +
-        (cl.alerts ? ' <button type="button" class="x" data-clubreset="' + esc(cl.id) + '">' + esc(tr("useGlobal")) + "</button>" : "") + "</div>";
-      html += '<div class="comps">';
-      for (j = 0; j < CLUB_ALERTS.length; j++) {
-        html += '<div class="setting"><label for="cal-' + esc(cl.id) + '-' + j + '" id="cal-' + esc(cl.id) + '-' + j + '-name">' + esc(tr(CLUB_ALERTS[j][1])) + '</label>' +
-          '<label class="switch"><input type="checkbox" role="switch" id="cal-' + esc(cl.id) + '-' + j + '" data-cal="' + esc(cl.id) + '" data-key="' + CLUB_ALERTS[j][0] + '" aria-labelledby="cal-' + esc(cl.id) + '-' + j + '-name"' +
-          (effAlerts(cl)[CLUB_ALERTS[j][0]] ? " checked" : "") + '><span aria-hidden="true"></span></label></div>';
-      }
-      html += "</div>";
-      html += "</div>";
     }
+    html = '<div class="table-wrap"><table class="matrix"><thead><tr><th scope="col">' + esc(tr("clubs")) + "</th>";
+    for (i = 0; i < clubs.length; i++) {
+      var cl = clubs[i];
+      html += '<th scope="col" data-id="' + esc(cl.id) + '"><div class="head-club"><b>' + esc(cl.name) + '</b><span class="small">' + esc(cl.league) + "</span>";
+      html += '<div class="row"><button type="button" class="x" data-act="rm">' + esc(tr("remove")) + "</button></div></div></th>";
+    }
+    html += "</tr></thead><tbody>";
+    // Competition rows.
+    for (j = 0; j < allComps.length; j++) {
+      html += '<tr><th scope="row">' + esc(allComps[j].name) + "</th>";
+      for (i = 0; i < clubs.length; i++) {
+        var cl2 = clubs[i], cs2 = compsFor(cl2.league), idx = -1;
+        for (k = 0; k < cs2.length; k++) { if (cs2[k].id === allComps[j].id) { idx = k; break; } }
+        if (idx < 0) { html += '<td data-id="' + esc(cl2.id) + '">\u2014</td>'; continue; }
+        var cid = "cmp-" + esc(cl2.id) + "-" + j;
+        html += '<td data-id="' + esc(cl2.id) + '"><div class="setting"><label for="' + cid + '" id="' + cid + '-name" class="sr-only">' + esc(allComps[j].name) + '</label>' +
+          '<label class="switch"><input type="checkbox" role="switch" id="' + cid + '" data-comp="' + esc(allComps[j].id) + '" aria-labelledby="' + cid + '-name"' +
+          (cl2.comps.indexOf(allComps[j].id) >= 0 ? " checked" : "") + '><span aria-hidden="true"></span></label></div></td>';
+      }
+      html += "</tr>";
+    }
+    // Club news row.
+    html += '<tr><th scope="row">' + esc(tr("clubNewsShort")) + "</th>";
+    for (i = 0; i < clubs.length; i++) {
+      var cl3 = clubs[i], nid = "cnews-" + esc(cl3.id);
+      html += '<td data-id="' + esc(cl3.id) + '"><div class="setting"><label for="' + nid + '" id="' + nid + '-name" class="sr-only">' + esc(tr("clubNewsShort")) + '</label>' +
+        '<label class="switch"><input type="checkbox" role="switch" id="' + nid + '" data-act="news" aria-labelledby="' + nid + '-name"' + (cl3.news ? " checked" : "") + '><span aria-hidden="true"></span></label></div></td>';
+    }
+    html += "</tr>";
+    // Alert rows.
+    for (j = 0; j < CLUB_ALERTS.length; j++) {
+      html += '<tr><th scope="row">' + esc(tr(CLUB_ALERTS[j][1])) + "</th>";
+      for (i = 0; i < clubs.length; i++) {
+        var cl4 = clubs[i], aid = "cal-" + esc(cl4.id) + "-" + j;
+        html += '<td data-id="' + esc(cl4.id) + '"><div class="setting"><label for="' + aid + '" id="' + aid + '-name" class="sr-only">' + esc(tr(CLUB_ALERTS[j][1])) + '</label>' +
+          '<label class="switch"><input type="checkbox" role="switch" id="' + aid + '" data-cal="' + esc(cl4.id) + '" data-key="' + CLUB_ALERTS[j][0] + '" aria-labelledby="' + aid + '-name"' +
+          (effAlerts(cl4)[CLUB_ALERTS[j][0]] ? " checked" : "") + '><span aria-hidden="true"></span></label></div></td>';
+      }
+      html += "</tr>";
+    }
+    html += "</tbody></table></div>";
     box.innerHTML = html;
   }
   // The test buttons act for one club: the one picked here, so a club with custom alerts
@@ -1151,23 +1163,6 @@ table.api th { color:var(--dim); font-weight:500; }
         (feeds.indexOf(f.id) >= 0 ? " checked" : "") + '><span aria-hidden="true"></span></label></div>';
     }).join("");
   }
-  function simsay(s, cls) { note("sim-msg", s, cls); }
-  function renderSim() {
-    var box = $("sim-grid"), i, html = "";
-    if (!simClubs.length) { box.innerHTML = '<div class="msg">' + esc(tr("noClubs")) + "</div>"; return; }
-    for (i = 0; i < simClubs.length; i++) {
-      var c = simClubs[i];
-      html += '<div><button type="button" class="simbtn" data-sim="' + esc(c.id) + '">' +
-        '<img src="' + esc(c.logo) + '" alt=""><span><b>' + esc(c.name) + "</b><small>" + esc(c.msg || tr("simTitle")) +
-        "</small></span></button>" +
-        '<div class="simrow"><select data-simlevel="' + esc(c.id) + '">' +
-        ["ok","info","warn","alert"].map(function (lv) {
-          return '<option value="' + lv + '"' + (c.level === lv ? " selected" : "") + ">" + lv + "</option>";
-        }).join("") +
-        '</select><button type="button" class="x" data-simrm="' + esc(c.id) + '">x</button></div></div>';
-    }
-    box.innerHTML = html;
-  }
   function wmsg(s, cls) { note("weather-msg", s, cls); }
   function renderCustomPlaces() {
     var box = $("custom-places"), list = (cfg && cfg.weather && cfg.weather.custom) || [], i;
@@ -1199,17 +1194,17 @@ table.api th { color:var(--dim); font-weight:500; }
     $("place-results").innerHTML = "";
     $("place-results").className = "hidden";
     range("w-interval", c.weather.interval); range("w-seconds", c.weather.seconds); range("w-volume", c.weather.volume);
-    $("w-sound").checked = !!c.weather.sound;
+    fillSound($("w-sound"), c.weather.sound);
     fillMode($("w-mode"), c.weather.mode);
 
     range("n-interval", c.news.interval); range("n-seconds", c.news.seconds); range("n-volume", c.news.volume);
     $("n-count").value = String(c.news.count);
-    $("n-sound").checked = !!c.news.sound;
+    fillSound($("n-sound"), c.news.sound);
     fillMode($("n-mode"), c.news.mode);
 
     fillSel($("f-provider"), c.providers, c.football.provider);
     fillMode($("f-mode"), c.football.mode);
-    $("f-sound").checked = !!c.football.sound;
+    fillSound($("f-sound"), c.football.sound);
     range("f-goalsec", c.football.goalSeconds); range("f-othersec", c.football.otherSeconds); range("f-volume", c.football.volume);
     $("f-next-enabled").checked = !!(c.football.nextGame && c.football.nextGame.enabled);
     $("f-next-minutes").value = String((c.football.nextGame && c.football.nextGame.minutes) || 0);
@@ -1220,7 +1215,7 @@ table.api th { color:var(--dim); font-weight:500; }
     }
 
     fillMode($("o-mode"), c.others.mode);
-    $("o-sound").checked = !!c.others.sound;
+    fillSound($("o-sound"), c.others.sound);
     range("o-seconds", c.others.seconds); range("o-volume", c.others.volume);
     var ob = document.querySelectorAll("[data-ob]");
     for (i = 0; i < ob.length; i++) { ob[i].checked = !!c.others.alerts[ob[i].getAttribute("data-ob")]; }
@@ -1228,8 +1223,7 @@ table.api th { color:var(--dim); font-weight:500; }
     clubs = JSON.parse(JSON.stringify(c.football.clubs || []));
     picks = JSON.parse(JSON.stringify(c.others.picks || []));
     feeds = (c.news.feeds || []).slice(0);
-    simClubs = JSON.parse(JSON.stringify((c.sim && c.sim.clubs) || []));
-    renderClubs(); renderTestClubs(); renderPicks(); renderFeeds();  renderSim();
+    renderClubs(); renderTestClubs(); renderPicks(); renderFeeds();
 
     var cv = c.civ || {}, clv = cv.levels || {};
     var wp = (c.weather && c.weather.proactive) || {};
@@ -1247,7 +1241,7 @@ table.api th { color:var(--dim); font-weight:500; }
     $("civ-anepc").checked = !!cv.anepc; $("civ-news").checked = !!cv.news;
     $("civ-keywords").value = cv.keywords || "";
     fillMode($("civ-mode"), cv.mode);
-    $("civ-sound").checked = !!cv.sound;
+    fillSound($("civ-sound"), cv.sound);
     range("civ-interval", cv.interval); range("civ-seconds", cv.seconds); range("civ-volume", cv.volume);
 
     fillSel($("add-league"), c.clubLeagues, c.clubLeagues[0] && c.clubLeagues[0].id);
@@ -1306,13 +1300,13 @@ table.api th { color:var(--dim); font-weight:500; }
         levels: { yellow: $("civ-yellow").checked, orange: $("civ-orange").checked, red: $("civ-red").checked },
         anepc: $("civ-anepc").checked, news: $("civ-news").checked, keywords: $("civ-keywords").value,
         interval: parseInt($("civ-interval").value, 10), seconds: parseInt($("civ-seconds").value, 10),
-        sound: $("civ-sound").checked, mode: $("civ-mode").value, volume: parseInt($("civ-volume").value, 10)
+        sound: $("civ-sound").value, mode: $("civ-mode").value, volume: parseInt($("civ-volume").value, 10)
       },
       weather: {
         place: $("w-place").value, custom: ((cfg && cfg.weather && cfg.weather.custom) || []).slice(0),
         provider: $("w-provider").value, when: $("w-when").value,
         interval: parseInt($("w-interval").value, 10), seconds: parseInt($("w-seconds").value, 10),
-        sound: $("w-sound").checked, mode: $("w-mode").value,
+        sound: $("w-sound").value, mode: $("w-mode").value,
         volume: parseInt($("w-volume").value, 10),
         proactive: {
           enabled: $("wp-enabled").checked, minutes: parseInt($("wp-minutes").value, 10),
@@ -1324,19 +1318,19 @@ table.api th { color:var(--dim); font-weight:500; }
       },
       news: {
         feeds: feeds.slice(0), interval: parseInt($("n-interval").value, 10), seconds: parseInt($("n-seconds").value, 10),
-        count: parseInt($("n-count").value, 10), sound: $("n-sound").checked, mode: $("n-mode").value,
+        count: parseInt($("n-count").value, 10), sound: $("n-sound").value, mode: $("n-mode").value,
         volume: parseInt($("n-volume").value, 10)
       },
       football: {
         provider: $("f-provider").value, clubs: clubs,
         alerts: { goal: fb.goal, against: fb.against, card: fb.card, sub: fb.sub, varNo: fb.varNo, penalty: fb.penalty, penMiss: fb.penMiss, start: fb.start, half: fb.half, end: fb.end },
         goalSeconds: parseInt($("f-goalsec").value, 10), otherSeconds: parseInt($("f-othersec").value, 10),
-        sound: $("f-sound").checked, mode: $("f-mode").value, volume: parseInt($("f-volume").value, 10),
+        sound: $("f-sound").value, mode: $("f-mode").value, volume: parseInt($("f-volume").value, 10),
         nextGame: { enabled: $("f-next-enabled").checked, minutes: parseInt($("f-next-minutes").value, 10) }
       },
       others: {
         picks: picks, alerts: { start: ob.start, half: ob.half, end: ob.end, score: ob.score },
-        seconds: parseInt($("o-seconds").value, 10), sound: $("o-sound").checked, mode: $("o-mode").value,
+        seconds: parseInt($("o-seconds").value, 10), sound: $("o-sound").value, mode: $("o-mode").value,
         volume: parseInt($("o-volume").value, 10)
       }
     };
@@ -1407,7 +1401,7 @@ table.api th { color:var(--dim); font-weight:500; }
       }
       $("civ-status").textContent = (d.status.civ && d.status.civ.at) ?
         (tr("checked") + new Date(d.status.civ.at).toLocaleTimeString()) : "";
-      $("weather-line").textContent = d.status.weather.line || tr("noneyet");
+      $("pv-w-line").textContent = d.status.weather.line || tr("noneyet");
       $("news-line").textContent = d.status.news.line || tr("noneyet");
 
       var wkeys = Object.keys(d.watches || {}), wh = "", wi, wv, wname;
@@ -1483,18 +1477,13 @@ table.api th { color:var(--dim); font-weight:500; }
 
   // ---- wiring ---------------------------------------------------------------------------------------------------------------
   var tabs = document.querySelectorAll(".tabs button");
-  var worktabs = document.querySelectorAll(".worktabs button");
   var subtabs = document.querySelectorAll(".subsubtabs button");
   function currentTab() {
     for (var i = 0; i < tabs.length; i++) { if (tabs[i].className.indexOf("on") >= 0) { return i; } }
     return 0;
   }
-  function currentWorktab() {
-    for (var i = 0; i < worktabs.length; i++) { if (worktabs[i].className.indexOf("on") >= 0) { return i; } }
-    return 0;
-  }
-  // Work, Settings and System are always visible. The module switches only hide Work sub-tabs;
-  // hiding a module never clears its configuration.
+  // Sport, Weather and News are now top-level tabs. Settings and System are always visible.
+  // A module switch hides its tab but never clears its configuration.
   function worktabEnabled(name) {
     if (name === "sport") { return !!$("m-sport").checked; }
     if (name === "weather") { return !!$("m-weather").checked; }
@@ -1505,27 +1494,20 @@ table.api th { color:var(--dim); font-weight:500; }
     var i, name, active = tabs[currentTab()].getAttribute("data-tab"), pane;
     for (i = 0; i < tabs.length; i++) {
       name = tabs[i].getAttribute("data-tab");
+      tabs[i].hidden = !worktabEnabled(name);
       tabs[i].setAttribute("aria-selected", name === active ? "true" : "false");
       pane = $(tabs[i].getAttribute("aria-controls"));
       if (pane) { pane.hidden = name !== active; }
-    }
-    var wa = worktabs[currentWorktab()].getAttribute("data-subtab");
-    for (i = 0; i < worktabs.length; i++) {
-      name = worktabs[i].getAttribute("data-subtab");
-      worktabs[i].hidden = !worktabEnabled(name);
-      worktabs[i].setAttribute("aria-selected", name === wa ? "true" : "false");
-      pane = $(worktabs[i].getAttribute("aria-controls"));
-      if (pane) { pane.hidden = !worktabEnabled(name) || name !== wa; }
     }
     var civColumn = $("civ-column");
     if (civColumn) { civColumn.hidden = !$("m-civ").checked; }
   }
   function applyTabVisibility() {
-    var vis = [], i;
-    for (i = 0; i < worktabs.length; i++) {
-      if (worktabEnabled(worktabs[i].getAttribute("data-subtab"))) { vis.push(i); }
+    var i, active = tabs[currentTab()].getAttribute("data-tab"), firstVisible = -1;
+    for (i = 0; i < tabs.length; i++) {
+      if (worktabEnabled(tabs[i].getAttribute("data-tab")) && firstVisible < 0) { firstVisible = i; }
     }
-    if (vis.length && vis.indexOf(currentWorktab()) < 0) { switchWorktab(vis[0]); }
+    if (!worktabEnabled(active)) { switchTab(firstVisible < 0 ? 0 : firstVisible); }
     else { updatePaneState(); }
   }
   function stepTab(delta) { switchTab(currentTab() + delta); }
@@ -1538,15 +1520,6 @@ table.api th { color:var(--dim); font-weight:500; }
     updatePaneState();
     $("tabnav-label").textContent = tabs[idx].textContent;
     $("tab-prev").disabled = false; $("tab-next").disabled = false;
-    window.scrollTo(0, 0);
-  }
-  function switchWorktab(idx) {
-    if (idx < 0) { idx = worktabs.length - 1; }
-    if (idx >= worktabs.length) { idx = 0; }
-    var i, paneId = worktabs[idx].getAttribute("aria-controls"), panes = document.querySelectorAll(".subtab");
-    for (i = 0; i < worktabs.length; i++) { worktabs[i].className = i === idx ? "on" : ""; }
-    for (i = 0; i < panes.length; i++) { panes[i].className = "subtab" + (panes[i].id === paneId ? " on" : ""); }
-    updatePaneState();
     window.scrollTo(0, 0);
   }
   function switchSubtab(idx) {
@@ -1574,7 +1547,6 @@ table.api th { color:var(--dim); font-weight:500; }
     }
   }
   wireTabs(tabs, switchTab);
-  wireTabs(worktabs, switchWorktab);
   wireTabs(subtabs, switchSubtab);
   $("tab-prev").addEventListener("click", function () { stepTab(-1); });
   $("tab-next").addEventListener("click", function () { stepTab(1); });
@@ -1642,7 +1614,7 @@ table.api th { color:var(--dim); font-weight:500; }
     var t = e.target;
     if (t && (t.tagName === "INPUT" || t.tagName === "SELECT")) {
       dirty = true; updateSaveState();
-      if (t.id && t.id.indexOf("v") < 0 && $(t.id + "v")) { $(t.id + "v").textContent = t.value; }
+      if (t.id && t.id.indexOf("v") < 0 && $(t.id + "v")) { $(t.id + "v").textContent = t.value === "0" ? tr("ncDefault") : t.value; }
     }
   }, true);
   document.body.addEventListener("change", function (e) {
@@ -1751,7 +1723,10 @@ table.api th { color:var(--dim); font-weight:500; }
     var max = cfg.maxClubs || 3;
     if (clubs.length >= max) { say(tr("maxClubs") + max, "err"); return; }
     for (i = 0; i < clubs.length; i++) { if (clubs[i].id === team) { say(tr("err") + "already added", "err"); return; } }
-    clubs.push({ id: team, name: name, league: league, comps: compsFor(league).map(function (c) { return c.id; }), news: false });
+    // A new club starts with every alert off: it never inherits the global switches silently.
+    var freshAlerts = {}, ak;
+    for (ak in cfg.football.alerts) { if (cfg.football.alerts.hasOwnProperty(ak)) { freshAlerts[ak] = false; } }
+    clubs.push({ id: team, name: name, league: league, comps: compsFor(league).map(function (c) { return c.id; }), news: false, alerts: freshAlerts });
     renderClubs(); 
     act(this, save().then(function () { say(tr("saved") + " (" + name + ")", "ok"); }));
   });
@@ -1826,78 +1801,6 @@ table.api th { color:var(--dim); font-weight:500; }
   $("save-news").addEventListener("click", function () { saveOnly(this); });
   $("save-civ").addEventListener("click", function () { saveOnly(this); });
 
-  // ---- goal simulation -----------------------------------------------------------------------------------------------
-  function saveSim() {
-    return api("config", { sim: { clubs: simClubs } }).then(function () {
-      return state();
-    }).then(function () { renderSim(); dirty = false; });
-  }
-  // The crest and the name are children of the button: a click on them must count as one click.
-  function closestData(el, attr) {
-    while (el && el !== document.body) {
-      if (el.getAttribute && el.getAttribute(attr)) { return el; }
-      el = el.parentNode;
-    }
-    return null;
-  }
-  document.body.addEventListener("click", function (e) {
-    var b = closestData(e.target, "data-sim"), id, oldBg, oldBorder;
-    if (b) {
-      id = b.getAttribute("data-sim");
-      // Do not use act(): it replaces textContent and would destroy the crest inside the button.
-      b.disabled = true;
-      simsay(tr("loading"), "");
-      api("test-club", { id: id }).then(function (d) {
-        simsay(tr("sent") + ": " + d.title + " - " + d.message, "ok");
-        // Green for 3 seconds so the click is unmistakable on the TV.
-        oldBg = b.style.background; oldBorder = b.style.borderColor;
-        b.style.background = "#1c4b2f"; b.style.borderColor = "#3fb950";
-        setTimeout(function () { b.style.background = oldBg; b.style.borderColor = oldBorder; }, 3000);
-      }).catch(function (err) { simsay(tr("err") + err.message, "err"); })
-        .then(function () { b.disabled = false; });
-      return;
-    }
-    b = closestData(e.target, "data-simrm");
-    if (b) {
-      id = b.getAttribute("data-simrm");
-      var nm = id, i;
-      for (i = 0; i < simClubs.length; i++) { if (simClubs[i].id === id) { nm = simClubs[i].name; break; } }
-      confirmHere(b, nm, function () {
-        for (i = 0; i < simClubs.length; i++) { if (simClubs[i].id === id) { simClubs.splice(i, 1); break; } }
-        saveSim().catch(function (err) { simsay(tr("err") + err.message, "err"); });
-      });
-      return;
-    }
-    b = closestData(e.target, "data-clubreset");
-    if (b) {
-      id = b.getAttribute("data-clubreset");
-      var cn = id, ci;
-      for (ci = 0; ci < clubs.length; ci++) { if (clubs[ci].id === id) { cn = clubs[ci].name; break; } }
-      confirmHere(b, cn, function () {
-        for (ci = 0; ci < clubs.length; ci++) { if (clubs[ci].id === id) { delete clubs[ci].alerts; break; } }
-        renderClubs();
-        save().catch(function (err) { say(tr("err") + err.message, "err"); });
-      });
-    }
-  });
-  document.body.addEventListener("change", function (e) {
-    var t = e.target, id = t && t.getAttribute("data-simlevel"), i;
-    if (!id) { return; }
-    for (i = 0; i < simClubs.length; i++) { if (simClubs[i].id === id) { simClubs[i].level = t.value; } }
-    saveSim().catch(function (err) { simsay(tr("err") + err.message, "err"); });
-  });
-  $("sim-add").addEventListener("click", function () {
-    var name = $("sim-name").value.replace(/^\s+|\s+$/g, ""), id = $("sim-id").value.replace(/^\s+|\s+$/g, "");
-    if (!name || !/^\d{1,8}$/.test(id)) { simsay(tr("err") + " id", "err"); return; }
-    if (simClubs.length >= 10) { simsay(tr("maxClubs") + "10", "err"); return; }
-    var i;
-    for (i = 0; i < simClubs.length; i++) { if (simClubs[i].id === id) { simsay(tr("err") + "already added", "err"); return; } }
-    simClubs.push({ id: id, name: name, msg: $("sim-text").value, level: $("sim-level").value,
-      logo: "https://a.espncdn.com/i/teamlogos/soccer/500/" + id + ".png" });
-    $("sim-name").value = ""; $("sim-id").value = ""; $("sim-text").value = "";
-    saveSim().then(function () { simsay(tr("saved") + ": " + name, "ok"); })
-      .catch(function (err) { simsay(tr("err") + err.message, "err"); });
-  });
   $("t-civ").addEventListener("click", function () { act(this, test("civ")); });
   $("save-football").addEventListener("click", function () { saveOnly(this); });
   $("save-others").addEventListener("click", function () { saveOnly(this); });

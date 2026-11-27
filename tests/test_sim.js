@@ -62,7 +62,7 @@ function assert(ok, msg) { if (!ok) { throw new Error('FAILED: ' + msg); } conso
   assert(r.ok && sent.length === 1, 'test-club sends exactly one notification');
   var n = sent[0];
   assert(n.title === 'Golo! Sporting' && n.message === 'Sporting 1-0 Benfica', 'title and message follow the club');
-  assert(n.level === 'ok' && n.mode === 'overlay' && n.theme === 'sport', 'level, overlay mode and sport theme');
+  assert(n.level === 'ok' && n.mode === undefined && n.theme === 'sport', 'level, the chosen look (none by default) and sport theme');
   assert(n.image === 'https://a.espncdn.com/i/teamlogos/soccer/500/2250.png', 'PNG crest is sent as image');
   assert(n.duration === 8 && n.group === false && n.source === 'tv-alerts', 'duration, group and source');
   assert(!n.sound && !n.icon, 'the simulated goal is silent and has no emoji icon');

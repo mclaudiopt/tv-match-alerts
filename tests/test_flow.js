@@ -109,7 +109,7 @@ function assert(ok, msg) { if (!ok) { throw new Error('FAILED: ' + msg); } conso
   assert(sent.length > 0, 'a goal between polls sends at least one banner');
   assert(/Gyokeres/.test(title(0)), 'goal banner names the scorer');
   assert(sent[0].source === 'tv-alerts', 'source is tv-alerts');
-  assert(sent[0].sound === 'reward', 'sport uses the reward sound');
+  assert(!sent[0].sound, 'no sound field by default (the hub decides)');
 
   sent = [];
   // The banner gap uses Date.now(), so advance the fake clock between sends.
